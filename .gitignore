@@ -1,0 +1,30 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Segredos — NUNCA vai ao GitHub
+.env
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Testes
+.pytest_cache/
+.coverage
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Uploads locais
+uploads/
