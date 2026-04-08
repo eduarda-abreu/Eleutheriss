@@ -28,7 +28,7 @@ class UserService:
         nova_usuaria = User(
             nome=dados.nome,
             email=dados.email.lower(), # Garante que o e-mail fique todo minúsculo
-            pwd_hash=hash_senha # Usando o nome exato da coluna que você colocou no Model
+            pwd_hash =hash_senha # Usando o nome exato da coluna que você colocou no Model
         )
         
         # 4. Salva no banco

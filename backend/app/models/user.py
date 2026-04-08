@@ -16,7 +16,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
-    senha_hash = Column(String, nullable=False)
+    pwd_hash = Column(String, nullable=False)
     perfil_financeiro = Column(Enum(PerfilFinanceiro), default=PerfilFinanceiro.INICIANTE)
     renda_mensal = Column(Numeric(12, 2), nullable=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
