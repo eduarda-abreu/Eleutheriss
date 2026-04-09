@@ -17,16 +17,16 @@ const Cadastro = () => {
     e.preventDefault();
 
     try {
-        const response = await fetch("http://localhost:8000/auth/cadastro", {
+        const response = await fetch("http://localhost:8000/auth/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                nome: name,
+                name: name,
                 email: email,
-                senha: password,
-                confirmar_senha: confirmPassword,
+                password: password,
+                confirm_password: confirmPassword,
             }),
         });
 

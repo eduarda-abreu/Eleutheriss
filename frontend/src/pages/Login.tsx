@@ -10,10 +10,42 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password, rememberMe });
-  };
+
+    try {
+        const response = await fetch("http://localhost:8000/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (response.status === 200) {
+            // Se o cadastro der certo, da essa 
+            alert("Login feito com sucesso!");
+            // redireciona para o login
+            window.location.href = "/login";
+
+        } else if (response.status === 401) {
+            // Erro de email cadastrado, envia esse alerta
+            alert("Falha ao entrar! \nEmail ou senha incorretos!");
+
+        } else {
+            // Outro erro
+            alert("Erro ao criar conta. Verifique os dados e tente novamente.");
+        }
+
+    } catch (error) {
+        alert("Erro de conexão. Verifique se o servidor está rodando.");
+    }
+};
 
   return (
     <div
