@@ -1,5 +1,5 @@
 from typing import Generator
-from app.core.database import SessionLocal # Verifique se seu arquivo de banco tem esse nome
+from app.core.database import SessionLocal
 
 def get_db() -> Generator:
     db = SessionLocal()
