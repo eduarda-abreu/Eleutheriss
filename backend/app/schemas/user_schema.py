@@ -4,48 +4,49 @@ from datetime import datetime
 
 
 class UserCreate(BaseModel):
-    nome: str
+    name: str
     email: EmailStr
-    senha: str
-    confirmar_senha: str
+    password: str
+    confirm_password: str
 
-    # Validação do Nome
-    @field_validator('nome')
+    @field_validator('name')
     @classmethod
-    def validar_nome(cls, value: str):
-        nome_limpo = value.strip() # Remove espaços em branco no início e no fim
-        if len(nome_limpo) < 2:
-            raise ValueError("O nome é muito curto. Precisa ter pelo menos 2 caracteres.")
-        return nome_limpo
+    def validate_name(cls, value: str):
+        clean_name = value.strip()
+        if len(clean_name) < 2:
+            raise ValueError("Name must have at least 2 characters.")
+        return clean_name
 
-    # Validação da Senha
-    @field_validator('senha')
+    @field_validator('password')
     @classmethod
-    def validar_senha(cls, value: str):
+    def validate_password(cls, value: str):
         if len(value) < 8:
-            raise ValueError("A senha deve ter pelo menos 8 caracteres.")
+            raise ValueError("Password must have at least 8 characters.")
         if not any(char.isdigit() for char in value):
-            raise ValueError("A senha precisa conter pelo menos um número.")
+            raise ValueError("Password must contain at least one number.")
         return value
 
-    # Validação do Modelo Inteiro (Comparar as duas senhas)
     @model_validator(mode='after')
-    def checar_senhas_coincidem(self):
-        if self.senha != self.confirmar_senha:
-            raise ValueError("As senhas não coincidem.")
+    def check_passwords_match(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match.")
         return self
 
 
 class UserResponse(BaseModel):
     id: UUID
-    nome: str
+    name: str
     email: EmailStr
-    criado_em: datetime
-    
-    # Permite que o Pydantic leia os dados do SQLAlchemy sem dar erro
+    created_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class LoginData(BaseModel):
+    email: EmailStr
+    password: str

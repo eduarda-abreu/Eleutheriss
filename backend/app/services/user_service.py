@@ -2,41 +2,54 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
 from app.models.user import User
-from app.schemas.user_schema import UserCreate # O nome que demos para a UsuariaCadastro no arquivo anterior
-from app.core.security import get_password_hash # A função do seu security.py
+from app.schemas.user_schema import UserCreate, LoginData
+from app.core.security import get_password_hash, verify_password, create_access_token
+
 
 class UserService:
 
-    def buscar_por_email(self, db: Session, email: str):
-        # Vai no banco, filtra pelo email e pega o primeiro resultado
+    def find_by_email(self, db: Session, email: str):
         return db.query(User).filter(User.email == email).first()
 
-    def cadastrar(self, db: Session, dados: UserCreate):
-        # 1. Verifica se a usuária já existe chamando a função de cima
-        usuario_existente = self.buscar_por_email(db, dados.email)
-        
-        if usuario_existente:
+    def register(self, db: Session, data: UserCreate):
+        existing_user = self.find_by_email(db, data.email)
+        if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, # 409 significa "Conflito" de dados
-                detail="Este e-mail já está cadastrado."
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This email is already registered."
             )
-        
-        # 2. Gera o hash da senha
-        hash_senha = get_password_hash(dados.senha)
-        
-        # 3. Monta o modelo para o banco de dados
-        nova_usuaria = User(
-            nome=dados.nome,
-            email=dados.email.lower(), # Garante que o e-mail fique todo minúsculo
-            pwd_hash =hash_senha # Usando o nome exato da coluna que você colocou no Model
-        )
-        
-        # 4. Salva no banco
-        db.add(nova_usuaria)
-        db.commit()
-        db.refresh(nova_usuaria)
-        
-        return nova_usuaria
 
-# Cria uma instância única do serviço para ser usada no resto do projeto
+        hashed_password = get_password_hash(data.password)
+
+        new_user = User(
+            name=data.name,
+            email=data.email.lower(),
+            pwd_hash=hashed_password
+        )
+
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return new_user
+
+    def login(self, db: Session, data: LoginData):
+        user = self.find_by_email(db, data.email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password."
+            )
+
+        if not verify_password(data.password, user.pwd_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password."
+            )
+
+        token = create_access_token({"sub": str(user.id)})
+
+        return {"access_token": token, "token_type": "bearer"}
+
+
 user_service = UserService()

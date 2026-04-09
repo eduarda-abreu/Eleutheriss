@@ -3,19 +3,16 @@ from jose import jwt
 from datetime import datetime, timedelta, timezone
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated = "auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-#gerar hash da senha
-def get_password_hash(password):
+def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-#verifica se a senha pura bate com o hash salvo no banco
-def verify_password(plain_pwd: str, hashed_pwd: str) -> bool:
-    return pwd_context.verify(plain_pwd, hashed_pwd)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
-#cria um token temporario para login
-def create_token_access(dados):
-    payload = dados.copy()
+def create_access_token(data: dict) -> str:
+    payload = data.copy()
     expiration = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
