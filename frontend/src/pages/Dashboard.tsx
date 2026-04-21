@@ -52,7 +52,7 @@ const Badge = ({ type }: { type: "Gasto" | "Economia" }) => (
       fontSize: 11,
       fontWeight: 600,
       background: type === "Gasto" ? "#FDECEA" : "#EAF6EE",
-      color: type === "Gasto" ? "#C0392B" : "#27AE60",
+      color: type === "Gasto" ? "#8B2246" : "#76BF62",
     }}
   >
     {type}
@@ -242,10 +242,10 @@ const Dashboard = () => {
         {/* ── KPI Cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
-            { label: "Total Gastos", value: "R$ 515", delta: "+12% vs mês passado", up: false, icon: "🛒" },
-            { label: "Total Economizado", value: "R$ 1.300", delta: "+8% vs mês passado", up: true, icon: "💰" },
-            { label: "Saldo do Mês", value: "R$ 785", delta: "Positivo!", up: true, icon: "$" },
-            { label: "Meta Mensal", value: "65%", delta: "R$ 1.300 / R$ 2.000", up: null, icon: "🎯" },
+            { label: "Total Gastos",      value: "R$ 515",   delta: "+12% vs mês passado", up: false, icon: "🛒", color: "#8B2246"  },
+{ label: "Total Economizado", value: "R$ 1.300", delta: "+8% vs mês passado",  up: true,  icon: "💰", color: "#76BF62"  },
+{ label: "Saldo do Mês",      value: "R$ 785",   delta: "Positivo!",            up: true,  icon: "$",  color: "#C89B30"  },
+{ label: "Meta Mensal",       value: "65%",       delta: "R$ 1.300 / R$ 2.000", up: null,  icon: "🎯", color: "#C89B30"  },
           ].map((card) => (
             <div
               key={card.label}
@@ -259,15 +259,15 @@ const Dashboard = () => {
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <span style={{ fontSize: 12, color: "#9a8f7e", fontWeight: 500 }}>{card.label}</span>
-                {card.up === true && <ArrowUpRight size={14} color="#27AE60" />}
-                {card.up === false && <ArrowDownRight size={14} color="#C0392B" />}
+                {card.up === true && <ArrowUpRight size={14} color="#76BF62" />}
+                {card.up === false && <ArrowDownRight size={14} color="#8B2246" />}
               </div>
               <div
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontSize: 26,
                   fontWeight: 700,
-                  color: "#C89B30",
+                  color: card.color,
                   margin: "6px 0 4px",
                 }}
               >
@@ -434,7 +434,7 @@ const Dashboard = () => {
                       padding: "14px 24px",
                       fontSize: 13,
                       fontWeight: 700,
-                      color: tx.amount < 0 ? "#C0392B" : "#27AE60",
+                      color: tx.amount < 0 ? "#8B2246" : "#76BF62",
                     }}
                   >
                     {tx.amount < 0 ? `- R$ ${Math.abs(tx.amount)}` : `+ R$ ${tx.amount}`}
