@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import user
+from app.api.v1 import user, incomes
 
 app = FastAPI(
     title="Eleutheriss API",
@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(user.router)
+app.include_router(incomes.router)
 
 @app.get("/")
 def read_root():
