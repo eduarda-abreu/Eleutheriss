@@ -379,6 +379,7 @@ const Dashboard = () => {
           >
             <span style={{ fontWeight: 700, fontSize: 16, color: "#1a1a1a" }}>Movimentações</span>
             <button
+              onClick={() => navigate("/envio-comprovante")}
               style={{
                 display: "flex",
                 alignItems: "center",
