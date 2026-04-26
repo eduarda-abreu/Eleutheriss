@@ -1,8 +1,7 @@
 import uuid
-from sqlalchemy import Boolean, Column, Date, ForeignKey, String, Numeric, DateTime, Enum, func
+from sqlalchemy import Boolean, Column, Date, ForeignKey, String, Numeric, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.core.database import Base
-import enum
 
 class Income(Base):
     __tablename__ = 'incomes'
@@ -12,6 +11,5 @@ class Income(Base):
     value = Column(Numeric(12, 2), nullable=False)
     description = Column(String(255))
     is_recurrent = Column(Boolean, default=False)
-    date = Column( Date, nullable=False)
+    date = Column(Date, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
