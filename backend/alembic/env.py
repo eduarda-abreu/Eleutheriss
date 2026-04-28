@@ -4,6 +4,8 @@ from alembic import context
 from app.core.config import settings
 from app.core.database import Base
 from app.models.user import User
+from app.models.incomes import Income
+from app.models.transaction import Transaction
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
