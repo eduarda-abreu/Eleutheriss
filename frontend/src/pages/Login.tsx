@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import fundoBg from "@/assets/fundo.png";
 import logoIcon from "@/assets/$.png";
@@ -9,8 +9,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const navigate = useNavigate();
 
- const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
@@ -28,18 +29,14 @@ const Login = () => {
         const data = await response.json();
 
         if (response.status === 200) {
-            // Se o cadastro der certo, da essa 
-            alert("Login feito com sucesso!");
-            // redireciona para o login
-            window.location.href = "/dashboard";
+            localStorage.setItem("access_token", data.access_token);
+            navigate("/dashboard");
 
         } else if (response.status === 401) {
-            // Erro de email cadastrado, envia esse alerta
             alert("Falha ao entrar! \nEmail ou senha incorretos!");
 
         } else {
-            // Outro erro
-            alert("Erro ao criar conta. Verifique os dados e tente novamente.");
+            alert("Erro ao fazer login. Verifique os dados e tente novamente.");
         }
 
     } catch (error) {
