@@ -115,28 +115,57 @@ const EnvioComprovante = () => {
 
     setStatus("processing");
 
-    // Simula chamada ao backend (≤ 5s – RNF1)
-    // Quando o endpoint POST /comprovantes/ estiver pronto, substitua este bloco
-    await new Promise((res) => setTimeout(res, 2000));
+    try {
+      // Monta o FormData — necessário para enviar arquivo via HTTP
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-    // Mock de resposta – será substituído pela resposta real da API
-    const mockResultado: ResultadoComprovante = {
-      valor: "R$ 0,00",
-      categoria_sugerida: "Outros",
-    };
+      // Chama o endpoint de upload que criamos no backend
+      const response = await fetch("http://localhost:8000/transactions/upload", {
+        method: "POST",
+        body: formData,
+        // NÃO coloca Content-Type aqui — o browser define automaticamente
+        // com o boundary correto para multipart/form-data
+      });
 
-    setResultado(mockResultado);
-    setValorCorrigido(mockResultado.valor);
-    setCategoriaCorrigida(mockResultado.categoria_sugerida);
-    setStatus("result");
+      if (!response.ok) {
+        const erro = await response.json();
+        setErroMsg(erro.detail || "Erro ao processar o comprovante.");
+        setStatus("error");
+        return;
+      }
+
+      const data = await response.json();
+
+      // Mapeia a resposta da API para o formato da tela
+      const resultadoApi: ResultadoComprovante = {
+        valor: `R$ ${data.transaction.value}`,
+        categoria_sugerida: data.transaction.category,
+      };
+
+      setResultado(resultadoApi);
+      setValorCorrigido(resultadoApi.valor);
+      setCategoriaCorrigida(resultadoApi.categoria_sugerida);
+      setStatus("result");
+
+    } catch (error) {
+      setErroMsg("Erro de conexão. Verifique se o servidor está rodando.");
+      setStatus("error");
+    }
   };
-
   // ── confirmar e salvar ────────────────────────────────────────────────────
   const handleConfirmar = async () => {
-    // TODO: chamar POST /comprovantes/ com { valor: valorCorrigido, categoria: categoriaCorrigida }
+  try {
+    // TODO: chamar POST /transactions/ para salvar definitivamente
+    // quando o endpoint de salvar transação estiver pronto
     alert(`Comprovante salvo!\nValor: ${valorCorrigido}\nCategoria: ${categoriaCorrigida}`);
     navigate("/dashboard");
-  };
+
+  } catch (error) {
+    setErroMsg("Erro ao salvar. Tente novamente.");
+    setStatus("error");
+  }
+};
 
   // ── reiniciar tela ────────────────────────────────────────────────────────
   const handleNovo = () => {
