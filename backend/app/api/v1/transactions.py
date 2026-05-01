@@ -1,60 +1,59 @@
-# transactions.py
-# Responsável por receber o upload de comprovantes (JPG, PNG, PDF)
-# e salvar as informações no banco de dados.
-
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db
+from app.services.ocr_service import ocr_service
+from app.services.llm_service import llm_service
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
-# Tipos de arquivo aceitos conforme RN1 da SM-6
-TIPOS_PERMITIDOS = {"image/jpeg", "image/png", "application/pdf"}
-
-# Tamanho máximo: 10MB em bytes
-TAMANHO_MAXIMO = 10 * 1024 * 1024
+ALLOWED_TYPES = {"image/jpeg", "image/png", "application/pdf"}
+MAX_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
-async def upload_comprovante(
-    arquivo: UploadFile = File(...),  # UploadFile é o tipo do FastAPI para arquivos
+async def upload_receipt(
+    file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     """
-    Recebe o upload de um comprovante de gasto.
+    Receives a receipt upload, extracts text via OCR
+    and classifies data via LLM.
 
-    Valida:
-    - Tipo do arquivo (JPG, PNG ou PDF)
-    - Tamanho máximo de 10MB
-
-    Retorna:
-    - Mensagem de sucesso e nome do arquivo recebido
+    Flow:
+    1. Validates file type and size
+    2. OCR extracts text from image
+    3. LLM interprets and structures the data
+    4. Returns the identified transaction
     """
 
-    # Passo 1: valida o tipo do arquivo
-    # content_type é enviado pelo navegador junto com o arquivo
-    # Ex: "image/jpeg", "image/png", "application/pdf"
-    if arquivo.content_type not in TIPOS_PERMITIDOS:
+    # Step 1: validate file type
+    if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Formato não suportado. Envie JPG, PNG ou PDF."
+            detail="Unsupported format. Please upload JPG, PNG or PDF."
         )
 
-    # Passo 2: lê os bytes do arquivo
-    # await é necessário porque a leitura é assíncrona (não trava o servidor)
-    bytes_arquivo = await arquivo.read()
+    # Step 2: read file bytes
+    file_bytes = await file.read()
 
-    # Passo 3: valida o tamanho
-    if len(bytes_arquivo) > TAMANHO_MAXIMO:
+    # Step 3: validate file size
+    if len(file_bytes) > MAX_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Arquivo muito grande. Tamanho máximo: 10MB."
+            detail="File too large. Maximum size: 10MB."
         )
 
-    # Passo 4: retorna confirmação
+    # Step 4: extract text via OCR (images only)
+    if file.content_type != "application/pdf":
+        text = ocr_service.extract_text(file_bytes)
+    else:
+        text = "PDF received — PDF processing coming soon."
+
+    # Step 5: classify via LLM
+    transaction = llm_service.classify_receipt(text)
+
     return {
-        "mensagem": "Comprovante recebido com sucesso!",
-        "nome_arquivo": arquivo.filename,
-        "tipo": arquivo.content_type,
-        "tamanho_bytes": len(bytes_arquivo)
+        "message": "Receipt processed successfully!",
+        "filename": file.filename,
+        "transaction": transaction.model_dump()
     }
