@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -15,6 +15,7 @@ import {
   Target,
   Clock,
   ArrowRight,
+  Camera,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-branco.png";
 
@@ -65,11 +66,11 @@ const Dashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   const navItems = [
-    { icon: LayoutDashboard, label: "Painel", active: true, soon: false },
-    { icon: GraduationCap, label: "Cursos", active: false, soon: true },
-    { icon: TrendingUp, label: "Investimentos", active: false, soon: true },
-    { icon: Wallet, label: "Renda", active: false, soon: true },
-    { icon: Settings, label: "Configurações", active: false, soon: true },
+    { icon: LayoutDashboard, label: "Painel",       active: true,  soon: false, action: () => {} },
+    { icon: GraduationCap,  label: "Cursos",        active: false, soon: true,  action: () => {} },
+    { icon: TrendingUp,     label: "Investimentos", active: false, soon: true,  action: () => {} },
+    { icon: Wallet,         label: "Renda",         active: false, soon: false, action: () => navigate("/registro-renda") },
+    { icon: Settings,       label: "Configurações", active: false, soon: true,  action: () => {} },
   ];
 
   const sidebarW = collapsed ? 64 : 188;
@@ -116,9 +117,10 @@ const Dashboard = () => {
 
         {/* Nav items */}
         <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4, padding: "0 8px" }}>
-          {navItems.map(({ icon: Icon, label, active, soon }) => (
+          {navItems.map(({ icon: Icon, label, active, soon, action }) => (
             <div
               key={label}
+              onClick={!soon ? action : undefined}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -243,9 +245,9 @@ const Dashboard = () => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
             { label: "Total Gastos",      value: "R$ 515",   delta: "+12% vs mês passado", up: false, icon: "🛒", color: "#8B2246"  },
-{ label: "Total Economizado", value: "R$ 1.300", delta: "+8% vs mês passado",  up: true,  icon: "💰", color: "#76BF62"  },
-{ label: "Saldo do Mês",      value: "R$ 785",   delta: "Positivo!",            up: true,  icon: "$",  color: "#C89B30"  },
-{ label: "Meta Mensal",       value: "65%",       delta: "R$ 1.300 / R$ 2.000", up: null,  icon: "🎯", color: "#C89B30"  },
+            { label: "Total Economizado", value: "R$ 1.300", delta: "+8% vs mês passado",  up: true,  icon: "💰", color: "#76BF62"  },
+            { label: "Saldo do Mês",      value: "R$ 785",   delta: "Positivo!",            up: true,  icon: "$",  color: "#C89B30"  },
+            { label: "Meta Mensal",       value: "65%",       delta: "R$ 1.300 / R$ 2.000", up: null,  icon: "🎯", color: "#C89B30"  },
           ].map((card) => (
             <div
               key={card.label}
@@ -276,6 +278,92 @@ const Dashboard = () => {
               <div style={{ fontSize: 11, color: "#9a8f7e" }}>{card.delta}</div>
             </div>
           ))}
+        </div>
+
+        {/* ── Ações Rápidas de Renda ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          {/* Registrar Renda Manual */}
+          <div
+            onClick={() => navigate("/registro-renda")}
+            style={{
+              background: "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
+              borderRadius: 14,
+              padding: "20px 24px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              boxShadow: "0 2px 12px rgba(200,155,48,0.25)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(200,155,48,0.35)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(200,155,48,0.25)";
+            }}
+          >
+            <div
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(26,26,26,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}
+            >
+              <Plus size={22} color="#1a1a1a" />
+            </div>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Registrar Renda</p>
+              <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(26,26,26,0.65)" }}>
+                Adicione uma entrada manualmente
+              </p>
+            </div>
+            <ArrowRight size={18} color="#1a1a1a" style={{ marginLeft: "auto", opacity: 0.5 }} />
+          </div>
+
+          {/* Enviar Comprovante (foto) */}
+          <div
+            onClick={() => navigate("/envio-comprovante")}
+            style={{
+              background: "#fff",
+              border: "1.5px solid #E0D9C8",
+              borderRadius: 14,
+              padding: "20px 24px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 6px 20px rgba(0,0,0,0.10)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+              (e.currentTarget as HTMLElement).style.boxShadow = "0 2px 12px rgba(0,0,0,0.05)";
+            }}
+          >
+            <div
+              style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "#F5F0E4",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}
+            >
+              <Camera size={20} color="#C89B30" />
+            </div>
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>Enviar Comprovante</p>
+              <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9a8f7e" }}>
+                Fotografe ou anexe um arquivo
+              </p>
+            </div>
+            <ArrowRight size={18} color="#9a8f7e" style={{ marginLeft: "auto" }} />
+          </div>
         </div>
 
         {/* ── Middle row ── */}
@@ -378,24 +466,46 @@ const Dashboard = () => {
             }}
           >
             <span style={{ fontWeight: 700, fontSize: 16, color: "#1a1a1a" }}>Movimentações</span>
-            <button
-              onClick={() => navigate("/envio-comprovante")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#C89B30",
-                color: "#1a1a1a",
-                border: "none",
-                borderRadius: 100,
-                padding: "8px 16px",
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-            >
-              <Plus size={14} /> Nova Entrada
-            </button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => navigate("/registro-renda")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "#F5F0E4",
+                  color: "#1a1a1a",
+                  border: "1.5px solid #D9D0BE",
+                  borderRadius: 100,
+                  padding: "8px 16px",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                <Plus size={14} /> Registrar Renda
+              </button>
+              <button
+                onClick={() => navigate("/envio-comprovante")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "#C89B30",
+                  color: "#1a1a1a",
+                  border: "none",
+                  borderRadius: 100,
+                  padding: "8px 16px",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                <Camera size={14} /> Enviar Comprovante
+              </button>
+            </div>
           </div>
 
           {/* table */}
