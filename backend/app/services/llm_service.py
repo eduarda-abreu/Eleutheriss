@@ -1,12 +1,9 @@
-<<<<<<< HEAD
-=======
 # llm_service.py
 # Responsável por interpretar o texto extraído pelo OCR e transformar em dados estruturados usando IA (GPT).
 
 # O OCR extrai texto bruto, mas não sabe o que é valor, data ou categoria. O LLM (Large Language Model) interpreta esse texto e organiza os dados. 
 
 
->>>>>>> 1d064acb5429946bf37e53233ca5273f475a7bd9
 from decimal import Decimal
 from datetime import date
 from pydantic import BaseModel
@@ -30,10 +27,7 @@ class ExtractedTransaction(BaseModel):
     confidence: float       # 0.0 to 1.0 — model certainty
 
 
-<<<<<<< HEAD
-=======
 # Prompt enviado ao GPT com o texto do comprovante . As chaves {variavel} são preenchidas dinamicamente
->>>>>>> 1d064acb5429946bf37e53233ca5273f475a7bd9
 PROMPT = ChatPromptTemplate.from_template("""
 You are a financial assistant specialized in Brazilian receipts.
 
@@ -61,26 +55,16 @@ class LLMService:
     """
 
     def __init__(self):
-<<<<<<< HEAD
-        # Initialize GPT model
-        # temperature=0 → consistent responses (no creativity)
-        # For data extraction we always want the same behavior
-=======
         # Inicializa o modelo GPT temperature=0 → respostas consistentes (sem criatividade)
         # Para extração de dados queremos sempre o mesmo comportamento
->>>>>>> 1d064acb5429946bf37e53233ca5273f475a7bd9
         self.llm = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0,
             api_key=settings.OPENAI_API_KEY
         )
 
-<<<<<<< HEAD
-        # with_structured_output forces return in ExtractedTransaction format
-=======
          # with_structured_output força o retorno no formato TransacaoExtraida
         # O LangChain usa function calling por baixo dos panos
->>>>>>> 1d064acb5429946bf37e53233ca5273f475a7bd9
         self.chain = PROMPT | self.llm.with_structured_output(ExtractedTransaction)
 
     def classify_receipt(self, ocr_text: str) -> ExtractedTransaction:
@@ -108,9 +92,5 @@ class LLMService:
         return self.chain.invoke({"ocr_text": ocr_text})
 
 
-<<<<<<< HEAD
-# Single instance shared across the project
-=======
 # Instância única compartilhada em todo o projeto
->>>>>>> 1d064acb5429946bf37e53233ca5273f475a7bd9
 llm_service = LLMService()
