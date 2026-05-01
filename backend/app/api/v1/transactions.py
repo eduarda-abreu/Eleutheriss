@@ -1,5 +1,6 @@
 # transactions.py
-# Responsável por receber o upload de comprovantes (JPG, PNG, PDF) e salvar as informações no banco de dados.
+# Responsável por receber o upload de comprovantes (JPG, PNG, PDF)
+# e salvar as informações no banco de dados.
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, status, Depends
 from sqlalchemy.orm import Session
