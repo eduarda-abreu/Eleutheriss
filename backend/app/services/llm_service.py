@@ -8,7 +8,7 @@ from decimal import Decimal
 from datetime import date
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import settings
 
 
