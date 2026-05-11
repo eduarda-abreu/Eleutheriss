@@ -82,10 +82,10 @@ const EnvioComprovante = () => {
   // ── nav items (espelho do Dashboard) ──────────────────────────────────────
   const navItems = [
     { icon: LayoutDashboard, label: "Painel", active: false, soon: false, action: () => navigate("/dashboard") },
-    { icon: GraduationCap, label: "Cursos", active: false, soon: true, action: () => {} },
-    { icon: TrendingUp, label: "Investimentos", active: false, soon: true, action: () => {} },
-    { icon: Wallet, label: "Renda", active: false, soon: true, action: () => {} },
-    { icon: Settings, label: "Configurações", active: false, soon: true, action: () => {} },
+    { icon: GraduationCap, label: "Cursos", active: false, soon: true, action: () => { } },
+    { icon: TrendingUp, label: "Investimentos", active: false, soon: true, action: () => { } },
+    { icon: Wallet, label: "Renda", active: false, soon: true, action: () => { } },
+    { icon: Settings, label: "Configurações", active: false, soon: true, action: () => { } },
   ];
 
   // ── seleção de arquivo ────────────────────────────────────────────────────
@@ -153,16 +153,41 @@ const EnvioComprovante = () => {
       setStatus("error");
     }
   };
-  // ── confirmar e salvar ────────────────────────────────────────────────────
-  const handleConfirmar = async () => {
+  
+const handleConfirmar = async () => {
   try {
-    // TODO: chamar POST /transactions/ para salvar definitivamente
-    // quando o endpoint de salvar transação estiver pronto
-    alert(`Comprovante salvo!\nValor: ${valorCorrigido}\nCategoria: ${categoriaCorrigida}`);
+    // Remove "R$ " e substitui vírgula por ponto para converter em número
+    const valorNumerico = valorCorrigido
+      .replace("R$", "")
+      .replace(".", "")
+      .replace(",", ".")
+      .trim();
+
+    const response = await fetch("http://localhost:8000/transactions/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        value: parseFloat(valorNumerico),
+        category: categoriaCorrigida,
+        description: selectedFile?.name || "",
+        type: "expense",
+      }),
+    });
+
+    if (!response.ok) {
+      const erro = await response.json();
+      setErroMsg(erro.detail || "Erro ao salvar.");
+      setStatus("error");
+      return;
+    }
+
+    alert("Comprovante salvo com sucesso!");
     navigate("/dashboard");
 
   } catch (error) {
-    setErroMsg("Erro ao salvar. Tente novamente.");
+    setErroMsg("Erro de conexão. Verifique se o servidor está rodando.");
     setStatus("error");
   }
 };

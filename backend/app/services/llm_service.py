@@ -1,33 +1,22 @@
-# llm_service.py
-# Responsável por interpretar o texto extraído pelo OCR e transformar em dados estruturados usando IA (GPT).
-
-# O OCR extrai texto bruto, mas não sabe o que é valor, data ou categoria. O LLM (Large Language Model) interpreta esse texto e organiza os dados. 
-
-
 from decimal import Decimal
 from datetime import date
-from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
+from abc import ABC, abstractmethod
+from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import settings
 
 
 class ExtractedTransaction(BaseModel):
-    """
-    Structured format that the LLM must return.
-
-    Pydantic ensures the LLM response always has
-    these fields with these types — no manual parsing needed.
-    """
-    value: Decimal          # e.g.: 47.90
-    description: str        # e.g.: "Mercado Silva"
-    date: date | None       # e.g.: 2025-04-10 (None if not found)
-    category: str           # e.g.: "Food"
-    type: str               # "income" or "expense"
-    confidence: float       # 0.0 to 1.0 — model certainty
+    """Structured format that the LLM must return."""
+    value: Decimal = Field(default=Decimal("0.0"))
+    description: str
+    date: date | None
+    category: str
+    type: str
+    confidence: float
 
 
-# Prompt enviado ao GPT com o texto do comprovante . As chaves {variavel} são preenchidas dinamicamente
 PROMPT = ChatPromptTemplate.from_template("""
 You are a financial assistant specialized in Brazilian receipts.
 
@@ -40,6 +29,7 @@ Rules:
 - For category use only: Food, Transport, Health,
   Housing, Leisure, Education, Clothing, Investment or Others
 - If you cannot identify a field → use null
+- CRITICAL: If you cannot find the transaction value, return 0.0 as a number. Never return the string 'null' for the value field.
 - confidence should reflect how clear the text was (0.0 to 1.0)
 
 Receipt text:
@@ -47,24 +37,34 @@ Receipt text:
 """)
 
 
-class LLMService:
+class BaseLLMService(ABC):
     """
-    Classification service using LLM (Large Language Model).
+    Classe base abstrata para serviços de classificação por IA.
+    Princípio L (Liskov) e I (Interface Segregation).
+    Permite trocar Gemini por OpenAI ou Groq sem mudar nenhum endpoint.
+    """
 
+    @abstractmethod
+    def classify_receipt(self, ocr_text: str) -> ExtractedTransaction:
+        """Classifica o texto do OCR em uma transação estruturada."""
+        pass
+
+
+class LLMService(BaseLLMService):  # ← só adiciona o BaseLLMService aqui
+    """
+    Classification service using Gemini.
     Receives raw text from OCR and returns a structured transaction.
     """
 
     def __init__(self):
-        # Inicializa o modelo GPT temperature=0 → respostas consistentes (sem criatividade)
-        # Para extração de dados queremos sempre o mesmo comportamento
-        self.llm = ChatOpenAI(
-            model="gpt-4o-mini",
+        # temperature=0 → respostas consistentes (sem criatividade)
+        self.llm = ChatGoogleGenerativeAI(
+            model="gemini-flash-latest",
             temperature=0,
-            api_key=settings.OPENAI_API_KEY
+            google_api_key=settings.GEMINI_API_KEY
         )
 
-         # with_structured_output força o retorno no formato TransacaoExtraida
-        # O LangChain usa function calling por baixo dos panos
+        # with_structured_output força o retorno no formato correto
         self.chain = PROMPT | self.llm.with_structured_output(ExtractedTransaction)
 
     def classify_receipt(self, ocr_text: str) -> ExtractedTransaction:
@@ -82,15 +82,9 @@ class LLMService:
             type="income",
             confidence=0.95
         )
-
-        Args:
-            ocr_text: raw text extracted by OCR
-
-        Returns:
-            transaction with structured data
         """
         return self.chain.invoke({"ocr_text": ocr_text})
 
 
-# Instância única compartilhada em todo o projeto
-llm_service = LLMService()
+# Instância única — fácil de trocar para OpenAILLMService em produção
+llm_service: BaseLLMService = LLMService()

@@ -36,7 +36,7 @@ const Cadastro = () => {
             // Se o cadastro der certo, da essa 
             alert("Conta criada com sucesso! Faça login para continuar.");
             // redireciona para o login
-            window.location.href = "/login";
+            window.location.href = "/dashboard";
 
         } else if (response.status === 409) {
             // Erro de email cadastrado, envia esse alerta

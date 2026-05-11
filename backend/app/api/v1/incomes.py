@@ -1,38 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+# Princípio S: não tem lógica de negócio.
+# Princípio D: recebe dependências via Depends(), não cria.
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from app.core.dependencies import get_db
-from app.models.incomes import Income
-from pydantic import BaseModel, condecimal
-from datetime import date
+from app.core.dependencies import get_db, get_income_service
+from app.schemas.income_schema import IncomeCreate, IncomeResponse
+from app.services.income_service import IncomeService
+router = APIRouter(prefix="/incomes", tags=["Incomes"])
 
-router = APIRouter(prefix="/rendas", tags=["Rendas"])
-
-class IncomeCreate(BaseModel):
-    value: condecimal(ge=0.01, decimal_places=2)
-    description: str
-    is_recurrent: bool = False # Ajuste aqui também!
-    date: date
-
-# Endpoint POST
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def criar_renda(
-    renda: IncomeCreate, 
-    db: Session = Depends(get_db)
-    # TODO: current_user = Depends(get_current_user) -> Ativaremos na integração do JWT
+@router.post("/", response_model=IncomeResponse,
+status_code=status.HTTP_201_CREATED)
+def create_income(
+    data: IncomeCreate,
+    db: Session = Depends(get_db),
+    service: IncomeService = Depends(get_income_service) # D aplicado!
 ):
-    try:
-        # Pega os dados do schema e cria o objeto do banco
-        db_renda = Income(
-            user_id="6a96d725-8495-4175-8a82-793b679fd77c", 
-            **renda.model_dump()           
-        )
-        
-        db.add(db_renda)
-        db.commit()
-        db.refresh(db_renda)
-        
-        return db_renda
-        
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao salvar renda: {str(e)}")
+
+
+    user_id = "6a96d725-8495-4175-8a82-793b679fd77c"
+    return service.create(db=db, data=data, user_id=user_id)
+
+@router.get("/", response_model=list[IncomeResponse])
+def get_incomes(
+    db: Session = Depends(get_db),
+    service: IncomeService = Depends(get_income_service) # D aplicado!
+):
+    user_id = "6a96d725-8495-4175-8a82-793b679fd77c"
+    return service.get_all(db=db, user_id=user_id)
