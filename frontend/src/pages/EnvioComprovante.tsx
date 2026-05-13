@@ -121,7 +121,8 @@ const EnvioComprovante = () => {
       formData.append("file", selectedFile);
 
       // Chama o endpoint de upload que criamos no backend
-      const response = await fetch("http://localhost:8000/transactions/upload", {
+      const baseUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${baseUrl}/transactions/upload`, {
         method: "POST",
         body: formData,
         // NÃO coloca Content-Type aqui — o browser define automaticamente
@@ -163,7 +164,8 @@ const handleConfirmar = async () => {
       .replace(",", ".")
       .trim();
 
-    const response = await fetch("http://localhost:8000/transactions/", {
+    const baseUrl = import.meta.env.VITE_API_URL;
+    const response = await fetch(`${baseUrl}/transactions/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

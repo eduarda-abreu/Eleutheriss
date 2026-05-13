@@ -2,8 +2,8 @@
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.services.income_service import IncomeService
-from app.services.ocr_service import BaseOCRService, TesseractOCRService
-from app.services.llm_service import BaseLLMService, OpenAILLMService
+from app.services.ocr_service import BaseOCRService, OCRService
+from app.services.llm_service import BaseLLMService, LLMService
 
 def get_db():
     db = SessionLocal()
@@ -18,8 +18,8 @@ def get_income_service() -> IncomeService:
 
 def get_ocr_service() -> BaseOCRService:
 
-    return TesseractOCRService()
+    return OCRService()
 
 def get_llm_service() -> BaseLLMService:
 
-    return OpenAILLMService()
+    return LLMService()
