@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import logoIcon from "@/assets/logo-branco.png";
 
-// ── tipos ────────────────────────────────────────────────────────────────────
+// Tipos
 interface Transaction {
   date: string;
   description: string;
@@ -28,42 +28,10 @@ interface Transaction {
   type: "Gasto" | "Economia";
 }
 
-// ── dados de exemplo ─────────────────────────────────────────────────────────
-const transactions: Transaction[] = [
-  { date: "11/04/2026", description: "Supermercado", category: "Alimentação", amount: -320, type: "Gasto" },
-  { date: "10/04/2026", description: "Uber", category: "Transporte", amount: -45, type: "Gasto" },
-  { date: "04/04/2026", description: "Salário poupança", category: "Outros", amount: 800, type: "Economia" },
-  { date: "07/04/2026", description: "Curso online", category: "Educação", amount: -150, type: "Gasto" },
-  { date: "09/04/2026", description: "Freelance", category: "Outros", amount: 500, type: "Economia" },
-];
-
-const categoryColors: Record<string, string> = {
-  Alimentação: "#C89B30",
-  Educação: "#8B2246",
-  Transporte: "#C89B30",
-};
-
-// ── componentes pequenos ──────────────────────────────────────────────────────
-const Badge = ({ type }: { type: "Gasto" | "Economia" }) => (
-  <span
-    style={{
-      display: "inline-block",
-      padding: "3px 10px",
-      borderRadius: 100,
-      fontSize: 11,
-      fontWeight: 600,
-      background: type === "Gasto" ? "#FDECEA" : "#EAF6EE",
-      color: type === "Gasto" ? "#8B2246" : "#76BF62",
-    }}
-  >
-    {type}
-  </span>
-);
-
-// ── página principal ─────────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const navItems = [
     { icon: LayoutDashboard, label: "Painel",       active: true,  soon: false, action: () => {} },
@@ -77,42 +45,11 @@ const Dashboard = () => {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0E4", fontFamily: "'Inter', sans-serif" }}>
-
-      {/* ── SIDEBAR ── */}
-      <aside
-        style={{
-          width: sidebarW,
-          minHeight: "100vh",
-          background: "#1A1A1A",
-          display: "flex",
-          flexDirection: "column",
-          padding: "20px 0",
-          transition: "width 0.3s ease",
-          flexShrink: 0,
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflow: "hidden",
-        }}
-      >
-        {/* Logo */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: collapsed ? "0 0 0 16px" : "0 16px",
-            marginBottom: 32,
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <img src={logoIcon} alt="logo" style={{ width: 32, height: 32, flexShrink: 0 }} />
-          {!collapsed && (
-            <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 16 }}>
-              Eleutheriss
-            </span>
-          )}
+      {/* SIDEBAR */}
+      <aside style={{ width: sidebarW, background: "#1A1A1A", display: "flex", flexDirection: "column", padding: "20px 0", transition: "width 0.3s ease", position: "sticky", top: 0, height: "100vh" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", marginBottom: 32 }}>
+          <img src={logoIcon} style={{ width: 32 }} alt="logo" />
+          {!collapsed && <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>Eleutheriss</span>}
         </div>
 
         {/* Nav items */}
@@ -190,58 +127,23 @@ const Dashboard = () => {
             />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Recolher</span>}
           </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 12px",
-              borderRadius: 10,
-              cursor: "pointer",
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-            }}
-            onClick={() => navigate("/login")}
-          >
-            <LogOut size={18} color="#9a8f7e" style={{ flexShrink: 0 }} />
+        </nav>
+        <div style={{ padding: "0 8px" }} onClick={() => navigate("/login")}>
+           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer" }}>
+            <LogOut size={18} color="#9a8f7e" />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Sair</span>}
-          </div>
+           </div>
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
-      <main style={{ flex: 1, padding: "32px 32px 48px", overflowY: "auto" }}>
+      {/* CONTEÚDO PRINCIPAL */}
+      <main style={{ flex: 1, padding: "32px" }}>
+        <header style={{ marginBottom: 28 }}>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, margin: 0 }}>Bom dia, Usuária ✨</h1>
+          <p style={{ color: "#C89B30", fontSize: 13 }}>Seu progresso financeiro atualizado</p>
+        </header>
 
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
-          <div>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 700, color: "#1a1a1a", margin: 0 }}>
-              Bom dia, Usuária ✨
-            </h1>
-            <p style={{ fontSize: 13, color: "#C89B30", fontWeight: 500, marginTop: 4 }}>
-              Abril 2026 • Acompanhe seu progresso financeiro
-            </p>
-          </div>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: "50%",
-              background: "#C89B30",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 700,
-              color: "#1a1a1a",
-              fontSize: 15,
-            }}
-          >
-            U
-          </div>
-        </div>
-
-        {/* ── KPI Cards ── */}
+        {/* CARDS DE KPI */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
             { label: "Total Gastos",      value: "R$ 515",   delta: "+12% vs mês passado", up: false, icon: "🛒", color: "#8B2246"  },
@@ -507,54 +409,30 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
-
-          {/* table */}
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#1A1A1A" }}>
-                {["Data", "Descrição", "Categoria", "Valor", "Tipo"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "12px 24px",
-                      textAlign: "left",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "#C89B30",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
+            <thead style={{ background: "#1A1A1A", color: "#C89B30" }}>
+              <tr>
+                <th style={{ padding: "12px", textAlign: "left" }}>Data</th>
+                <th style={{ padding: "12px", textAlign: "left" }}>Descrição</th>
+                <th style={{ padding: "12px", textAlign: "left" }}>Valor</th>
+                <th style={{ padding: "12px", textAlign: "left" }}>Tipo</th>
               </tr>
             </thead>
             <tbody>
-              {transactions.map((tx, i) => (
-                <tr
-                  key={i}
-                  style={{ borderBottom: "1px solid #F0EAD8" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#FDFAF5")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  <td style={{ padding: "14px 24px", fontSize: 13, color: "#6b6253" }}>{tx.date}</td>
-                  <td style={{ padding: "14px 24px", fontSize: 13, color: "#1a1a1a", fontWeight: 500 }}>{tx.description}</td>
-                  <td style={{ padding: "14px 24px", fontSize: 13, color: "#9a8f7e" }}>{tx.category}</td>
-                  <td
-                    style={{
-                      padding: "14px 24px",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: tx.amount < 0 ? "#8B2246" : "#76BF62",
-                    }}
-                  >
-                    {tx.amount < 0 ? `- R$ ${Math.abs(tx.amount)}` : `+ R$ ${tx.amount}`}
-                  </td>
-                  <td style={{ padding: "14px 24px" }}>
-                    <Badge type={tx.type} />
-                  </td>
-                </tr>
-              ))}
+              {transactions.length === 0 ? (
+                <tr><td colSpan={4} style={{ padding: "20px", textAlign: "center", color: "#9a8f7e" }}>Nenhuma transação encontrada.</td></tr>
+              ) : (
+                transactions.map((tx, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #F0EAD8" }}>
+                    <td style={{ padding: "12px" }}>{tx.date}</td>
+                    <td style={{ padding: "12px" }}>{tx.description}</td>
+                    <td style={{ padding: "12px", fontWeight: 700, color: tx.amount < 0 ? "#8B2246" : "#76BF62" }}>
+                      R$ {Math.abs(tx.amount).toFixed(2)}
+                    </td>
+                    <td style={{ padding: "12px" }}>{tx.type}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

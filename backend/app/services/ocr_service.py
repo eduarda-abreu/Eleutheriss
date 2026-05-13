@@ -2,90 +2,55 @@ import numpy as np
 import cv2
 from PIL import Image
 import pytesseract
+from abc import ABC, abstractmethod
 
+# Configuração do caminho do executável do Tesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Tesseract\tesseract.exe'
 
 
-class OCRService:
+class BaseOCRService(ABC):
     """
-    OCR (Optical Character Recognition) Service.
+    Classe base abstrata para serviços de OCR.
+    Princípio L (Liskov) e I (Interface Segregation).
+    Qualquer implementação pode substituir esta sem quebrar o sistema.
+    """
 
-    Reads text from receipt images using OpenCV for
-    image preprocessing and Tesseract for text extraction.
+    @abstractmethod
+    def extract_text(self, image_bytes: bytes) -> str:
+        """Extrai texto de uma imagem. Deve ser implementado."""
+        pass
+
+
+class OCRService(BaseOCRService):  # ← só adiciona o BaseOCRService aqui
+    """
+    Serviço de OCR usando OpenCV + Tesseract.
+    Lê o texto de imagens de comprovantes.
     """
 
     def preprocess(self, image_bytes: bytes) -> np.ndarray:
         """
-        Improves image quality before OCR processing.
-
-        Receipt photos often have problems like:
-        - Uneven lighting (shadows, reflections)
-        - Colored or textured backgrounds
-        - Slight blur
-
-        This method converts the image to black and white
-        using adaptive thresholding, which works well even
-        with uneven lighting.
-
-        Args:
-            image_bytes: raw bytes from the uploaded image
-
-        Returns:
-            preprocessed black and white image ready for OCR
+        Prepara a imagem para o OCR.
+        Otimizado para prints de tela e documentos digitais limpos.
         """
-
-        # Converte bytes → array numpy (formato que o OpenCV entende)
         arr = np.frombuffer(image_bytes, np.uint8)
-
-        # Decodifica como imagem colorida (BGR = azul, verde, vermelho)
         img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-
-        # Converte para escala de cinza, pois o OCR funciona melhor sem informação de cor
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        
-        # Binarização adaptativa: transforma cada pixel em preto ou branco
-        # "Adaptativa" porque analisa regiões da imagem separadamente,funcionando bem mesmo com iluminação irregular
-        thresh = cv2.adaptiveThreshold(
-            gray,
-            255,                              # max value (white)
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,   # gaussian mean per region
-            cv2.THRESH_BINARY,                # above threshold → white
-            11,                               # region size (11x11 pixels)
-            2                                 # fine-tuning constant
-        )
+        # Zoom de 2x — Tesseract funciona melhor com letras maiores
+        resized = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
 
-        return thresh
+        return resized
 
     def extract_text(self, image_bytes: bytes) -> str:
-        """
-        Extracts text from a receipt image.
-
-        Flow:
-        1. Preprocesses image to improve quality
-        2. Runs Tesseract OCR
-        3. Returns raw extracted text
-
-        Args:
-            image_bytes: raw bytes from the uploaded image
-
-        Returns:
-            raw text extracted from the image
-            e.g.: "MERCADO SILVA\\nR$ 47,90\\n10/04/2025"
-        """
-
-       
+        """Extrai o texto de uma imagem de comprovante."""
         processed_img = self.preprocess(image_bytes)
-
-        # Converte array numpy → PIL Image (pytesseract aceita PIL Image, não numpy diretamente)
         pil_img = Image.fromarray(processed_img)
 
-        # Extrai o texto com Tesseract lang="por" = dicionário em português (melhora ç, ã, é...)
+        # lang="por" reconhece acentos e símbolos monetários
         text = pytesseract.image_to_string(pil_img, lang="por")
 
-        # strip() remove espaços e quebras de linha extras
         return text.strip()
 
 
- #Instância única compartilhada em todo o projeto. Evita criar um objeto novo a cada requisição
-ocr_service = OCRService()
+# Instância única — fácil de trocar para GoogleVisionOCRService em produção
+ocr_service: BaseOCRService = OCRService()
