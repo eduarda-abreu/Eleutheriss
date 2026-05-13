@@ -13,7 +13,7 @@ const FORM_URL = "https://docs.google.com/forms/d/e/SEU_FORM_ID_AQUI/viewform";
 
 const ValidationFormSection = () => {
   return (
-    <section className="py-24 bg-background">
+    <section id="feedback" className="py-24 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center space-y-8">
 
