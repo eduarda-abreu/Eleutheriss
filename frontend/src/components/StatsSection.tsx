@@ -41,7 +41,7 @@ const StatsSection = () => {
             A realidade financeira das mulheres no Brasil
           </h2>
           <p className="mt-4 text-secondary-foreground/80 text-lg">
-            Dados que mostram por que a educação financeira feminina é urgente e necessária.
+            Números reais sobre o que muitas de nós vivemos todo dia.
           </p>
         </div>
 

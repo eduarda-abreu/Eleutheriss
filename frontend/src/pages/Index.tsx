@@ -5,6 +5,7 @@ import ImportanceSection from "@/components/ImportanceSection";
 import StatsSection from "@/components/StatsSection";
 import EducationSection from "@/components/EducationSection";
 import CTASection from "@/components/CTASection";
+import ValidationFormSection from "@/components/ValidationFormSection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
       <StatsSection />
       <EducationSection />
       <CTASection />
+      <ValidationFormSection />
       <Footer />
     </div>
   );

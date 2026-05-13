@@ -44,9 +44,7 @@ const HeroSection = () => {
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-lg leading-relaxed">
-              Gerencie suas finanças automaticamente com fotos de comprovantes, 
-              aprenda sobre investimentos e construa sua independência financeira 
-              com a Eleutheriss.
+              Registre seus gastos tirando uma foto, veja onde seu dinheiro vai todo mês e aprenda a guardar mais — tudo em um lugar só, de graça.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -57,7 +55,7 @@ const HeroSection = () => {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="text-base">
-                Conhecer a Plataforma
+                Ver como funciona
               </Button>
             </div>
 

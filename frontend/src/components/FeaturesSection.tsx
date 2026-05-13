@@ -4,7 +4,7 @@ import receiptScan from "@/assets/receipt-scan.png";
 const features = [
   {
     icon: Camera,
-    title: "Leitura Automática de Comprovantes",
+    title: "Leitura de Comprovantes",
     description: "Tire uma foto do seu comprovante e nós extraímos automaticamente os dados para o seu fluxo de caixa.",
   },
   {
