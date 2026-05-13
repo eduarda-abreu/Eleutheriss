@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, GraduationCap, TrendingUp, Wallet, Settings,
-  LogOut, ChevronLeft, Plus, ArrowUpRight, ArrowDownRight,
-  BookOpen, Target, Clock, ArrowRight
+  LayoutDashboard, LogOut, ChevronLeft
 } from "lucide-react";
+// Certifique-se de que o caminho do logo está correto no seu projeto
 import logoIcon from "@/assets/logo-branco.png";
 
 // Tipos
@@ -16,55 +15,117 @@ interface Transaction {
   type: "Gasto" | "Economia";
 }
 
+interface SummaryData {
+  totalGastos: number;
+  totalEconomizado: number;
+  saldoMes: number;
+}
+
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  color: string;
+  up: boolean | null;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Estado agrupado para os resumos vindos da API
+  const [summary, setSummary] = useState<SummaryData>({
+    totalGastos: 0,
+    totalEconomizado: 0,
+    saldoMes: 0
+  });
 
   // Carrega os dados reais da usuária
   useEffect(() => {
-    const saved = localStorage.getItem("user_transactions");
-    if (saved) {
-      setTransactions(JSON.parse(saved));
-    }
+    const fetchDashboard = async () => {
+      try {
+        // CORREÇÃO: Usando a variável de ambiente para funcionar na Vercel e no Local
+        const baseUrl = import.meta.env.VITE_API_URL;
+        const response = await fetch(`${baseUrl}/dashboard/resumo`);
+
+        if (!response.ok) {
+          throw new Error("Falha ao buscar dados da API");
+        }
+
+        const data = await response.json();
+
+        // Atualizando os estados corretamente com base no payload da API
+        setSummary({
+          totalGastos: data.total_gastos || 0,
+          totalEconomizado: data.total_renda || 0,
+          saldoMes: data.saldo || 0
+        });
+        
+        setTransactions(data.movimentacoes || []);
+
+      } catch (error) {
+        console.error("Erro ao buscar dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
   }, []);
-
-  // Cálculos Dinâmicos
-  const totalGastos = transactions
-    .filter(t => t.type === "Gasto")
-    .reduce((acc, curr) => acc + Math.abs(curr.amount), 0);
-
-  const totalEconomizado = transactions
-    .filter(t => t.type === "Economia")
-    .reduce((acc, curr) => acc + curr.amount, 0);
-
-  const saldoMes = totalEconomizado - totalGastos;
 
   const sidebarW = collapsed ? 64 : 188;
 
+  if (loading) {
+    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>Carregando dashboard...</div>;
+  }
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0E4", fontFamily: "'Inter', sans-serif" }}>
-      {/* SIDEBAR */}
+      
+      {/* ── SIDEBAR ── */}
       <aside style={{ width: sidebarW, background: "#1A1A1A", display: "flex", flexDirection: "column", padding: "20px 0", transition: "width 0.3s ease", position: "sticky", top: 0, height: "100vh" }}>
+        
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", marginBottom: 32 }}>
           <img src={logoIcon} style={{ width: 32 }} alt="logo" />
           {!collapsed && <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>Eleutheriss</span>}
         </div>
+        
         <nav style={{ flex: 1, padding: "0 8px" }}>
           <div style={{ background: "#C89B30", padding: "10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
             <LayoutDashboard size={18} color="#1A1A1A" />
             {!collapsed && <span style={{ fontSize: 13, fontWeight: 700 }}>Painel</span>}
           </div>
         </nav>
-        <div style={{ padding: "0 8px" }} onClick={() => navigate("/login")}>
-           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer" }}>
+        
+        {/* CORREÇÃO: Agrupamento do Rodapé da Sidebar (Recolher e Sair) com tags arrumadas */}
+        <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 4 }}>
+          
+          {/* Botão Recolher */}
+          <div 
+            onClick={() => setCollapsed(!collapsed)}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer", borderRadius: 10 }}
+          >
+            <ChevronLeft 
+              size={18} color="#9a8f7e" 
+              style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}
+            />
+            {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Recolher</span>}
+          </div>
+
+          {/* Botão Sair */}
+          <div 
+            onClick={() => navigate("/login")}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer", borderRadius: 10 }}
+          >
             <LogOut size={18} color="#9a8f7e" />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Sair</span>}
-           </div>
+          </div>
+
         </div>
       </aside>
 
-      {/* CONTEÚDO PRINCIPAL */}
+      {/* ── CONTEÚDO PRINCIPAL ── */}
       <main style={{ flex: 1, padding: "32px" }}>
         <header style={{ marginBottom: 28 }}>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, margin: 0 }}>Bom dia, Usuária ✨</h1>
@@ -73,9 +134,9 @@ const Dashboard = () => {
 
         {/* CARDS DE KPI */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
-          <StatCard label="Total Gastos" value={`R$ ${totalGastos.toFixed(2)}`} color="#8B2246" up={false} />
-          <StatCard label="Total Economia" value={`R$ ${totalEconomizado.toFixed(2)}`} color="#76BF62" up={true} />
-          <StatCard label="Saldo Livre" value={`R$ ${saldoMes.toFixed(2)}`} color="#C89B30" up={saldoMes >= 0} />
+          <StatCard label="Total Gastos" value={`R$ ${summary.totalGastos.toFixed(2)}`} color="#8B2246" up={false} />
+          <StatCard label="Total Economia" value={`R$ ${summary.totalEconomizado.toFixed(2)}`} color="#76BF62" up={true} />
+          <StatCard label="Saldo Livre" value={`R$ ${summary.saldoMes.toFixed(2)}`} color="#C89B30" up={summary.saldoMes >= 0} />
           <StatCard label="Meta de Abril" value="65%" color="#1a1a1a" up={null} />
         </div>
 
@@ -122,7 +183,8 @@ const Dashboard = () => {
   );
 };
 
-const StatCard = ({ label, value, color, up }: any) => (
+// Componente tipado corretamente
+const StatCard = ({ label, value, color, up }: StatCardProps) => (
   <div style={{ background: "#fff", padding: "20px", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
     <div style={{ fontSize: 12, color: "#9a8f7e" }}>{label}</div>
     <div style={{ fontSize: 24, fontWeight: 700, color, fontFamily: "'Playfair Display', serif", margin: "8px 0" }}>{value}</div>

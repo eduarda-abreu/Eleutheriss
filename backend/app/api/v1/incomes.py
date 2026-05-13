@@ -16,7 +16,7 @@ def create_income(
 ):
 
 
-    user_id = "6a96d725-8495-4175-8a82-793b679fd77c"
+    user_id = "4dea455b-8886-4d03-98b2-3268f9de9829"
     return service.create(db=db, data=data, user_id=user_id)
 
 @router.get("/", response_model=list[IncomeResponse])
