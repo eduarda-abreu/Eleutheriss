@@ -3,10 +3,13 @@ import cv2
 from PIL import Image
 import pytesseract
 from abc import ABC, abstractmethod
+import os
+import pytesseract
 
-# Configuração do caminho do executável do Tesseract
-pytesseract.pytesseract.tesseract_cmd = r'C:\Tesseract\tesseract.exe'
-
+# Se estiver no Windows (local), usa o caminho do C:
+# Se estiver no Linux (Render), o Tesseract já está no PATH, então não precisa de caminho
+if os.name == 'nt':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Tesseract\tesseract.exe'
 
 class BaseOCRService(ABC):
     """
