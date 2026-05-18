@@ -91,7 +91,7 @@ const RegistroRenda = () => {
     const fetchRecentIncomes = async () => {
       setLoadingHistory(true);
       try {
-        const response = await fetch("http://localhost:8000/rendas/");
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes/`);
         if (response.ok) {
           const data = await response.json();
           // Pegar as 3 mais recentes
@@ -163,7 +163,7 @@ const RegistroRenda = () => {
         is_recurrent: isRecurrent,
       };
 
-      const response = await fetch("http://localhost:8000/rendas/", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
