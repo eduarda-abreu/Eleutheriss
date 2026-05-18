@@ -10,6 +10,7 @@ import Cadastro from "./pages/Cadastro.tsx";
 import Dashbboard from "./pages/Dashboard.tsx";
 import EnvioComprovante from "./pages/EnvioComprovante.tsx";
 import RegistroRenda from "./pages/RegistroRenda.tsx";
+import AlterarSenha from "./pages/AlterarSenha.tsx";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashbboard />} />
           <Route path="/envio-comprovante" element={<EnvioComprovante />} />
           <Route path="/registro-renda" element={<RegistroRenda />} />
+          <Route path="/alterar-senha" element={<AlterarSenha />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
