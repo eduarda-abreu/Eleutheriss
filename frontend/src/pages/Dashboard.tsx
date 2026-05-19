@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, LogOut, ChevronLeft
+  LayoutDashboard, LogOut, ChevronLeft, AlertCircle,
+  GraduationCap, TrendingUp, Wallet, Settings,
 } from "lucide-react";
 // Certifique-se de que o caminho do logo está correto no seu projeto
 import logoIcon from "@/assets/logo-branco.png";
@@ -28,12 +29,25 @@ interface StatCardProps {
   up: boolean | null;
 }
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+};
+
+const getCurrentMonth = () => {
+  const month = new Date().toLocaleDateString("pt-BR", { month: "long" });
+  return month.charAt(0).toUpperCase() + month.slice(1);
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [fetchError, setFetchError] = useState("");
+
   // Estado agrupado para os resumos vindos da API
   const [summary, setSummary] = useState<SummaryData>({
     totalGastos: 0,
@@ -65,6 +79,7 @@ const Dashboard = () => {
 
       } catch (error) {
         console.error("Erro ao buscar dashboard:", error);
+        setFetchError("Não foi possível carregar os dados. Verifique sua conexão e tente atualizar a página.");
       } finally {
         setLoading(false);
       }
@@ -75,65 +90,160 @@ const Dashboard = () => {
 
   const sidebarW = collapsed ? 64 : 188;
 
+  const navItems = [
+    { icon: LayoutDashboard, label: "Painel",       active: true,  soon: false, action: () => {} },
+    { icon: GraduationCap,  label: "Cursos",        active: false, soon: true,  action: () => {} },
+    { icon: TrendingUp,     label: "Investimentos", active: false, soon: true,  action: () => {} },
+    { icon: Wallet,         label: "Renda",         active: false, soon: false, action: () => navigate("/registro-renda") },
+    { icon: Settings,       label: "Configurações", active: false, soon: true,  action: () => {} },
+  ];
+
   if (loading) {
-    return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>Carregando dashboard...</div>;
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", gap: 16, background: "#F5F0E4" }}>
+        <svg viewBox="0 0 72 72" style={{ width: 48, height: 48, animation: "spin 1s linear infinite" }}>
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+          <circle cx="36" cy="36" r="30" fill="none" stroke="#F0EAD8" strokeWidth="6" />
+          <circle cx="36" cy="36" r="30" fill="none" stroke="#C89B30" strokeWidth="6" strokeLinecap="round" strokeDasharray="80 110" strokeDashoffset="0" />
+        </svg>
+        <span style={{ color: "#9a8f7e", fontSize: 14, fontFamily: "'Inter', sans-serif" }}>Carregando seu painel...</span>
+      </div>
+    );
   }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0E4", fontFamily: "'Inter', sans-serif" }}>
       
       {/* ── SIDEBAR ── */}
-      <aside style={{ width: sidebarW, background: "#1A1A1A", display: "flex", flexDirection: "column", padding: "20px 0", transition: "width 0.3s ease", position: "sticky", top: 0, height: "100vh" }}>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", marginBottom: 32 }}>
-          <img src={logoIcon} style={{ width: 32 }} alt="logo" />
-          {!collapsed && <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>Eleutheriss</span>}
+      <aside
+        style={{
+          width: sidebarW,
+          minHeight: "100vh",
+          background: "#1A1A1A",
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px 0",
+          transition: "width 0.3s ease",
+          flexShrink: 0,
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        {/* Logo */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: collapsed ? "0 0 0 16px" : "0 16px",
+            marginBottom: 32,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <img src={logoIcon} alt="logo" style={{ width: 32, height: 32, flexShrink: 0 }} />
+          {!collapsed && (
+            <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 16 }}>
+              Eleutheriss
+            </span>
+          )}
         </div>
-        
-        <nav style={{ flex: 1, padding: "0 8px" }}>
-          <div style={{ background: "#C89B30", padding: "10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-            <LayoutDashboard size={18} color="#1A1A1A" />
-            {!collapsed && <span style={{ fontSize: 13, fontWeight: 700 }}>Painel</span>}
-          </div>
+
+        {/* Nav */}
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4, padding: "0 8px" }}>
+          {navItems.map(({ icon: Icon, label, active, soon, action }) => (
+            <div
+              key={label}
+              onClick={!soon ? action : undefined}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: active ? "#C89B30" : "transparent",
+                cursor: soon ? "default" : "pointer",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => { if (!active && !soon) e.currentTarget.style.background = "#2a2a2a"; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+            >
+              <Icon size={18} color={active ? "#1A1A1A" : "#9a8f7e"} style={{ flexShrink: 0 }} />
+              {!collapsed && (
+                <>
+                  <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? "#1A1A1A" : "#9a8f7e" }}>
+                    {label}
+                  </span>
+                  {soon && (
+                    <span style={{
+                      marginLeft: "auto", fontSize: 9, fontWeight: 600,
+                      background: "#2a2a2a", color: "#9a8f7e", borderRadius: 4,
+                      padding: "2px 5px", letterSpacing: "0.04em",
+                    }}>
+                      Em breve
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
         </nav>
-        
+
+        {/* Rodapé */}
         <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 4 }}>
-          
-          <div 
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer", borderRadius: 10 }}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap" }}
+            onClick={() => setCollapsed((c) => !c)}
           >
-            <ChevronLeft 
-              size={18} color="#9a8f7e" 
-              style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}
+            <ChevronLeft
+              size={18} color="#9a8f7e"
+              style={{ flexShrink: 0, transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}
             />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Recolher</span>}
           </div>
 
-          <div 
-            onClick={() => navigate("/login")}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer", borderRadius: 10 }}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap" }}
+            onClick={() => {
+              localStorage.removeItem("access_token");
+              localStorage.removeItem("user_name");
+              navigate("/login");
+            }}
           >
-            <LogOut size={18} color="#9a8f7e" />
+            <LogOut size={18} color="#9a8f7e" style={{ flexShrink: 0 }} />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Sair</span>}
           </div>
-
         </div>
       </aside>
 
       {/* ── CONTEÚDO PRINCIPAL ── */}
       <main style={{ flex: 1, padding: "32px" }}>
         <header style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, margin: 0 }}>Bom dia, Usuária ✨</h1>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, margin: 0 }}>{getGreeting()}, {localStorage.getItem("user_name") || "Usuária"} ✨</h1>
           <p style={{ color: "#C89B30", fontSize: 13 }}>Seu progresso financeiro atualizado</p>
         </header>
+
+        {fetchError && (
+          <div role="alert" style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: "#FDE8EE", border: "1px solid #f5b8ca",
+            borderRadius: 10, padding: "12px 16px", marginBottom: 24,
+          }}>
+            <AlertCircle size={16} color="#8B2246" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: "#8B2246" }}>{fetchError}</span>
+          </div>
+        )}
 
         {/* CARDS DE KPI */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
           <StatCard label="Total Gastos" value={`R$ ${summary.totalGastos.toFixed(2)}`} color="#8B2246" up={false} />
           <StatCard label="Total Economia" value={`R$ ${summary.totalEconomizado.toFixed(2)}`} color="#76BF62" up={true} />
           <StatCard label="Saldo Livre" value={`R$ ${summary.saldoMes.toFixed(2)}`} color="#C89B30" up={summary.saldoMes >= 0} />
-          <StatCard label="Meta de Abril" value="65%" color="#1a1a1a" up={null} />
+          <StatCard label={`Meta de ${getCurrentMonth()}`} value="65%" color="#1a1a1a" up={null} />
         </div>
 
         {/* TABELA DE MOVIMENTAÇÕES */}

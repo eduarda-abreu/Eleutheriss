@@ -18,6 +18,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-branco.png";
+import { toast } from "sonner";
 
 // ── tipos ────────────────────────────────────────────────────────────────────
 type ProcessStatus = "idle" | "preview" | "processing" | "result" | "error";
@@ -185,8 +186,8 @@ const handleConfirmar = async () => {
       return;
     }
 
-    alert("Comprovante salvo com sucesso!");
-    navigate("/dashboard");
+    toast.success("Comprovante salvo com sucesso!");
+    setTimeout(() => navigate("/dashboard"), 1500);
 
   } catch (error) {
     setErroMsg("Erro de conexão. Verifique se o servidor está rodando.");
@@ -304,7 +305,7 @@ const handleConfirmar = async () => {
 
           <div
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap" }}
-            onClick={() => navigate("/login")}
+            onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user_name"); navigate("/login"); }}
           >
             <LogOut size={18} color="#9a8f7e" style={{ flexShrink: 0 }} />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Sair</span>}

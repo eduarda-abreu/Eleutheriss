@@ -316,7 +316,7 @@ const RegistroRenda = () => {
 
           <div
             style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap" }}
-            onClick={() => navigate("/login")}
+            onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user_name"); navigate("/login"); }}
           >
             <LogOut size={18} color="#9a8f7e" style={{ flexShrink: 0 }} />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Sair</span>}

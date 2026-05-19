@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertCircle, RefreshCw } from "lucide-react";
 import fundoBg from "@/assets/fundo.png";
 import logoIcon from "@/assets/$.png";
 
@@ -9,10 +9,14 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
@@ -28,12 +32,14 @@ const Login = () => {
         localStorage.setItem("user_name", data.name || "Usuária");
         navigate("/dashboard");
       } else if (response.status === 401) {
-        alert("Falha ao entrar! \nEmail ou senha incorretos!");
+        setError("E-mail ou senha incorretos. Verifique e tente novamente.");
       } else {
-        alert("Erro ao fazer login. Verifique os dados e tente novamente.");
+        setError("Erro ao fazer login. Verifique os dados e tente novamente.");
       }
     } catch {
-      alert("Erro de conexão. Verifique se o servidor está rodando.");
+      setError("Erro de conexão. Verifique sua internet e tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,6 +68,17 @@ const Login = () => {
             Por favor, insira seus dados.
           </p>
         </div>
+
+        {error && (
+          <div role="alert" style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: "#FDE8EE", border: "1px solid #f5b8ca",
+            borderRadius: 10, padding: "12px 16px", marginBottom: 8,
+          }}>
+            <AlertCircle style={{ width: 16, height: 16, color: "#8B2246", flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: "#8B2246" }}>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
@@ -113,30 +130,43 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Re-lembre / Esqueci */}
+          {/* Lembrar de mim / Esqueci */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
               <input type="checkbox" checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 style={{ accentColor: "#C89B30", width: 15, height: 15, cursor: "pointer" }} />
-              <span style={{ fontSize: "13px", color: "#6b6253" }}>Re-lembre</span>
+              <span style={{ fontSize: "13px", color: "#6b6253" }}>Lembrar de mim</span>
             </label>
-            <span
-              onClick={() => navigate("/alterar-senha")}
-              style={{ fontSize: "13px", color: "#8B2246", fontWeight: 500, cursor: "pointer" }}
+            <Link
+              to="/alterar-senha"
+              style={{ fontSize: "13px", color: "#8B2246", fontWeight: 500, textDecoration: "none" }}
             >
               Esqueci a senha
-            </span>
+            </Link>
           </div>
 
           {/* Botão */}
-          <button type="submit" style={{
-            width: "100%", height: "46px",
-            background: "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
-            border: "none", borderRadius: "100px", fontSize: "15px", fontWeight: 700,
-            color: "#1a1a1a", cursor: "pointer", letterSpacing: "0.02em", fontFamily: "inherit",
-          }}>
-            Entrar
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%", height: "46px",
+              background: loading ? "#D9D0BE" : "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
+              border: "none", borderRadius: "100px", fontSize: "15px", fontWeight: 700,
+              color: "#1a1a1a", cursor: loading ? "not-allowed" : "pointer",
+              letterSpacing: "0.02em", fontFamily: "inherit",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              transition: "background 0.2s",
+            }}
+          >
+            {loading ? (
+              <>
+                <RefreshCw style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+                Entrando…
+                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+              </>
+            ) : "Entrar"}
           </button>
         </form>
 
