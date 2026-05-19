@@ -18,24 +18,25 @@ class ExtractedTransaction(BaseModel):
 
 
 PROMPT = ChatPromptTemplate.from_template("""
-You are a financial assistant specialized in Brazilian receipts.
+You are a financial assistant specialized in Brazilian receipts and PIX transactions.
 
 From the text below, automatically extracted from a receipt,
 identify the financial information and return a structured JSON.
 
 Rules:
-- If it looks like a purchase or payment → type = "expense"
-- If it looks like a deposit, received PIX or salary → type = "income"
+- PIX RECEBIDO, TRANSFERÊNCIA RECEBIDA, CRÉDITO, DEPÓSITO → type = "income"
+- PIX ENVIADO, TRANSFERÊNCIA ENVIADA, DÉBITO, PAGAMENTO, COMPRA → type = "expense"
+- If the text contains "Para:" or "Destinatário:" → type = "expense"
+- If the text contains "De:" or "Remetente:" or "Pagador:" → type = "income"
+- If uncertain → type = "expense"
 - For category use only: Food, Transport, Health,
   Housing, Leisure, Education, Clothing, Investment or Others
-- If you cannot identify a field → use null
 - CRITICAL: If you cannot find the transaction value, return 0.0 as a number. Never return the string 'null' for the value field.
 - confidence should reflect how clear the text was (0.0 to 1.0)
 
 Receipt text:
 {ocr_text}
 """)
-
 
 class BaseLLMService(ABC):
     """
