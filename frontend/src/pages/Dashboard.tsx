@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, LogOut, ChevronLeft, AlertCircle
+  LayoutDashboard, LogOut, ChevronLeft, AlertCircle,
+  GraduationCap, TrendingUp, Wallet, Settings,
 } from "lucide-react";
 // Certifique-se de que o caminho do logo está correto no seu projeto
 import logoIcon from "@/assets/logo-branco.png";
@@ -89,6 +90,14 @@ const Dashboard = () => {
 
   const sidebarW = collapsed ? 64 : 188;
 
+  const navItems = [
+    { icon: LayoutDashboard, label: "Painel",       active: true,  soon: false, action: () => {} },
+    { icon: GraduationCap,  label: "Cursos",        active: false, soon: true,  action: () => {} },
+    { icon: TrendingUp,     label: "Investimentos", active: false, soon: true,  action: () => {} },
+    { icon: Wallet,         label: "Renda",         active: false, soon: false, action: () => navigate("/registro-renda") },
+    { icon: Settings,       label: "Configurações", active: false, soon: true,  action: () => {} },
+  ];
+
   if (loading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", flexDirection: "column", gap: 16, background: "#F5F0E4" }}>
@@ -106,45 +115,108 @@ const Dashboard = () => {
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0E4", fontFamily: "'Inter', sans-serif" }}>
       
       {/* ── SIDEBAR ── */}
-      <aside style={{ width: sidebarW, background: "#1A1A1A", display: "flex", flexDirection: "column", padding: "20px 0", transition: "width 0.3s ease", position: "sticky", top: 0, height: "100vh" }}>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 16px", marginBottom: 32 }}>
-          <img src={logoIcon} style={{ width: 32 }} alt="logo" />
-          {!collapsed && <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700 }}>Eleutheriss</span>}
+      <aside
+        style={{
+          width: sidebarW,
+          minHeight: "100vh",
+          background: "#1A1A1A",
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px 0",
+          transition: "width 0.3s ease",
+          flexShrink: 0,
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        {/* Logo */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: collapsed ? "0 0 0 16px" : "0 16px",
+            marginBottom: 32,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <img src={logoIcon} alt="logo" style={{ width: 32, height: 32, flexShrink: 0 }} />
+          {!collapsed && (
+            <span style={{ color: "#F5F0E4", fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 16 }}>
+              Eleutheriss
+            </span>
+          )}
         </div>
-        
-        <nav style={{ flex: 1, padding: "0 8px" }}>
-          <div style={{ background: "#C89B30", padding: "10px", borderRadius: 10, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-            <LayoutDashboard size={18} color="#1A1A1A" />
-            {!collapsed && <span style={{ fontSize: 13, fontWeight: 700 }}>Painel</span>}
-          </div>
+
+        {/* Nav */}
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4, padding: "0 8px" }}>
+          {navItems.map(({ icon: Icon, label, active, soon, action }) => (
+            <div
+              key={label}
+              onClick={!soon ? action : undefined}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: active ? "#C89B30" : "transparent",
+                cursor: soon ? "default" : "pointer",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => { if (!active && !soon) e.currentTarget.style.background = "#2a2a2a"; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+            >
+              <Icon size={18} color={active ? "#1A1A1A" : "#9a8f7e"} style={{ flexShrink: 0 }} />
+              {!collapsed && (
+                <>
+                  <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? "#1A1A1A" : "#9a8f7e" }}>
+                    {label}
+                  </span>
+                  {soon && (
+                    <span style={{
+                      marginLeft: "auto", fontSize: 9, fontWeight: 600,
+                      background: "#2a2a2a", color: "#9a8f7e", borderRadius: 4,
+                      padding: "2px 5px", letterSpacing: "0.04em",
+                    }}>
+                      Em breve
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
         </nav>
-        
+
+        {/* Rodapé */}
         <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 4 }}>
-          
-          <div 
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer", borderRadius: 10 }}
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap" }}
+            onClick={() => setCollapsed((c) => !c)}
           >
-            <ChevronLeft 
-              size={18} color="#9a8f7e" 
-              style={{ transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}
+            <ChevronLeft
+              size={18} color="#9a8f7e"
+              style={{ flexShrink: 0, transform: collapsed ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}
             />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Recolher</span>}
           </div>
 
           <div
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, cursor: "pointer", overflow: "hidden", whiteSpace: "nowrap" }}
             onClick={() => {
               localStorage.removeItem("access_token");
               localStorage.removeItem("user_name");
               navigate("/login");
             }}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px", cursor: "pointer", borderRadius: 10 }}
           >
-            <LogOut size={18} color="#9a8f7e" />
+            <LogOut size={18} color="#9a8f7e" style={{ flexShrink: 0 }} />
             {!collapsed && <span style={{ fontSize: 13, color: "#9a8f7e" }}>Sair</span>}
           </div>
-
         </div>
       </aside>
 

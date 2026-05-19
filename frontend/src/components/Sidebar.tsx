@@ -13,20 +13,12 @@ import logoIcon from "@/assets/logo-branco.png";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
-type NavItemReady = {
+type NavItem = {
   icon: React.ElementType;
   label: string;
-  soon: false;
-  path: string;
+  soon: boolean;
+  path?: string;
 };
-
-type NavItemSoon = {
-  icon: React.ElementType;
-  label: string;
-  soon: true;
-};
-
-type NavItem = NavItemReady | NavItemSoon;
 
 // ── Itens de navegação (fonte única de verdade) ────────────────────────────
 
@@ -37,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: Wallet,         label: "Renda",         soon: false, path: "/registro-renda" },
   { icon: Settings,       label: "Configurações", soon: true  },
 ];
+
 
 // ── Componente ─────────────────────────────────────────────────────────────
 
@@ -112,7 +105,7 @@ const Sidebar = () => {
             <div
               key={item.label}
               onClick={() => {
-                if (!item.soon) navigate(item.path);
+                if (!item.soon && item.path) navigate(item.path);
               }}
               style={{
                 display: "flex",
