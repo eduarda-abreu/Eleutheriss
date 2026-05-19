@@ -49,7 +49,11 @@ class UserService:
 
         token = create_access_token({"sub": str(user.id)})
 
-        return {"access_token": token, "token_type": "bearer"}
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "name": user.name
+        }
 
 
 user_service = UserService()
