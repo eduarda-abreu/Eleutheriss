@@ -10,7 +10,7 @@ from app.core.dependencies import get_db, get_ocr_service, get_llm_service
 from app.services.ocr_service import BaseOCRService
 from app.services.llm_service import BaseLLMService
 from app.models.transaction import Transaction
-router = APIRouter(prefix="/transactions", tags=["Transactions"])
+router = APIRouter(prefix="/transactions")
 ALLOWED_TYPES = {"image/jpeg", "image/png", "application/pdf"}
 MAX_SIZE = 10 * 1024 * 1024 # 10MB
 

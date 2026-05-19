@@ -84,8 +84,12 @@ const RegistroRenda = () => {
     const fetchRecentIncomes = async () => {
       setLoadingHistory(true);
       try {
+<<<<<<< HEAD
         const baseUrl  = import.meta.env.VITE_API_URL;
         const response = await fetch(`${baseUrl}/rendas/`);
+=======
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes/`);
+>>>>>>> f5a478afd876b826a9ee649c92f718f0e33edce5
         if (response.ok) {
           const data = await response.json();
           const sorted = [...data]
@@ -152,9 +156,14 @@ const RegistroRenda = () => {
         is_recurrent: isRecurrent,
       };
 
+<<<<<<< HEAD
       const baseUrl  = import.meta.env.VITE_API_URL;
       const response = await fetch(`${baseUrl}/rendas/`, {
         method:  "POST",
+=======
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes/`, {
+        method: "POST",
+>>>>>>> f5a478afd876b826a9ee649c92f718f0e33edce5
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
       });
