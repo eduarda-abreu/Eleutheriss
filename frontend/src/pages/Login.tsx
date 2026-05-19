@@ -30,6 +30,7 @@ const Login = () => {
 
         if (response.status === 200) {
             localStorage.setItem("access_token", data.access_token);
+            if (data.name) localStorage.setItem("user_name", data.name);
             navigate("/dashboard");
 
         } else if (response.status === 401) {

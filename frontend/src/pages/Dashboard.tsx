@@ -59,7 +59,8 @@ const StatCard = ({ label, value, color, up }: StatCardProps) => (
 // ── Página Dashboard ───────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const userName  = localStorage.getItem("user_name") ?? "Usuária";
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading]           = useState(true);
 
@@ -133,7 +134,7 @@ const Dashboard = () => {
               margin: 0,
             }}
           >
-            Bom dia, Usuária ✨
+            Bem-vinda, {userName} ✨
           </h1>
           <p style={{ color: "#C89B30", fontSize: 13 }}>
             Seu progresso financeiro atualizado
