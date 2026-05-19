@@ -23,22 +23,6 @@ const Login = () => {
 
       const data = await response.json();
 
-<<<<<<< HEAD
-        if (response.status === 200) {
-            localStorage.setItem("access_token", data.access_token);
-            if (data.name) localStorage.setItem("user_name", data.name);
-            navigate("/dashboard");
-
-        } else if (response.status === 401) {
-            alert("Falha ao entrar! \nEmail ou senha incorretos!");
-
-        } else {
-            alert("Erro ao fazer login. Verifique os dados e tente novamente.");
-        }
-
-    } catch (error) {
-        alert("Erro de conexão. Verifique se o servidor está rodando.");
-=======
       if (response.status === 200) {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("user_name", data.name || "Usuária");
@@ -50,7 +34,6 @@ const Login = () => {
       }
     } catch {
       alert("Erro de conexão. Verifique se o servidor está rodando.");
->>>>>>> f5a478afd876b826a9ee649c92f718f0e33edce5
     }
   };
 
