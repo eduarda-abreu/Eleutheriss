@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 from app.core.config import settings
 
@@ -18,3 +18,17 @@ def create_access_token(data: dict) -> str:
     )
     payload.update({"exp": expiration})
     return jwt.encode(payload, settings.SECRET_KEY, settings.ALGORITHM)
+
+def get_user_id_from_token(token: str) -> str:
+    """
+    Extrai o user_id do token JWT.
+    O user_id foi salvo no campo 'sub' ao criar o token.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise ValueError("Token inválido.")
+        return user_id
+    except JWTError:
+        raise ValueError("Token inválido ou expirado.")

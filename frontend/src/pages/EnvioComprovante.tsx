@@ -44,7 +44,7 @@ const EnvioComprovante = () => {
   const [resultado, setResultado] = useState<ResultadoComprovante | null>(null);
   const [valorCorrigido, setValorCorrigido] = useState("");
   const [categoriaCorrigida, setCategoriaCorrigida] = useState("");
-  const [tipoCorrigido, setTipoCorrigido] = useState("expense"); // ← novo
+  const [tipoCorrigido, setTipoCorrigido] = useState("expense");
   const [erroMsg, setErroMsg] = useState("");
 
   const sidebarW = collapsed ? 64 : 188;
@@ -86,9 +86,13 @@ const EnvioComprovante = () => {
       formData.append("file", selectedFile);
 
       const baseUrl = import.meta.env.VITE_API_URL;
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${baseUrl}/transactions/upload`, {
         method: "POST",
         body: formData,
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
@@ -109,7 +113,7 @@ const EnvioComprovante = () => {
       setResultado(resultadoApi);
       setValorCorrigido(resultadoApi.valor);
       setCategoriaCorrigida(resultadoApi.categoria_sugerida);
-      setTipoCorrigido(resultadoApi.tipo_sugerido); // ← seta o tipo da IA
+      setTipoCorrigido(resultadoApi.tipo_sugerido);
       setStatus("result");
 
     } catch {
@@ -120,21 +124,24 @@ const EnvioComprovante = () => {
 
   const handleConfirmar = async () => {
     try {
-      // Corrige o valor — remove R$, não remove ponto decimal
       const valorNumerico = valorCorrigido
         .replace("R$", "")
         .replace(",", ".")
         .trim();
 
       const baseUrl = import.meta.env.VITE_API_URL;
+      const token = localStorage.getItem("access_token");
       const response = await fetch(`${baseUrl}/transactions/`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({
           value: parseFloat(valorNumerico),
           category: categoriaCorrigida,
           description: selectedFile?.name || "",
-          type: tipoCorrigido, // ← usa o tipo corrigido
+          type: tipoCorrigido,
         }),
       });
 
@@ -169,7 +176,6 @@ const EnvioComprovante = () => {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0E4", fontFamily: "'Inter', sans-serif" }}>
 
-      {/* SIDEBAR */}
       <aside style={{
         width: sidebarW, minHeight: "100vh", background: "#1A1A1A",
         display: "flex", flexDirection: "column", padding: "20px 0",
@@ -212,7 +218,6 @@ const EnvioComprovante = () => {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main style={{ flex: 1, padding: "32px 32px 48px", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
           <div>
@@ -224,7 +229,6 @@ const EnvioComprovante = () => {
 
         <div style={{ maxWidth: 640, background: "#fff", borderRadius: 18, boxShadow: "0 2px 24px rgba(0,0,0,0.07)", overflow: "hidden" }}>
 
-          {/* IDLE */}
           {status === "idle" && (
             <div style={{ padding: "48px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
               <div style={{ width: 96, height: 96, borderRadius: "50%", background: "#F5F0E4", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -248,7 +252,6 @@ const EnvioComprovante = () => {
             </div>
           )}
 
-          {/* PREVIEW */}
           {status === "preview" && previewUrl && (
             <div style={{ padding: "32px 40px", display: "flex", flexDirection: "column", gap: 24 }}>
               <div>
@@ -270,7 +273,6 @@ const EnvioComprovante = () => {
             </div>
           )}
 
-          {/* PROCESSING */}
           {status === "processing" && (
             <div style={{ padding: "64px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 28 }}>
               <svg viewBox="0 0 72 72" style={{ width: 72, height: 72, animation: "spin 1s linear infinite" }}>
@@ -289,7 +291,6 @@ const EnvioComprovante = () => {
             </div>
           )}
 
-          {/* RESULT */}
           {status === "result" && resultado && (
             <div style={{ padding: "32px 40px", display: "flex", flexDirection: "column", gap: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -331,7 +332,6 @@ const EnvioComprovante = () => {
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>Corrija se necessário</p>
 
-                {/* Valor */}
                 <div>
                   <label style={labelStyle}>Valor</label>
                   <div style={{ position: "relative" }}>
@@ -343,7 +343,6 @@ const EnvioComprovante = () => {
                   </div>
                 </div>
 
-                {/* Categoria */}
                 <div>
                   <label style={labelStyle}>Categoria</label>
                   <div style={{ position: "relative" }}>
@@ -357,7 +356,6 @@ const EnvioComprovante = () => {
                   </div>
                 </div>
 
-                {/* Tipo — campo novo */}
                 <div>
                   <label style={labelStyle}>Tipo</label>
                   <div style={{ display: "flex", gap: 12 }}>
@@ -368,9 +366,7 @@ const EnvioComprovante = () => {
                       borderRadius: "10px", fontSize: "14px", fontWeight: 700,
                       color: tipoCorrigido === "expense" ? "#fff" : "#1a1a1a",
                       cursor: "pointer", fontFamily: "inherit",
-                    }}>
-                      💸 Gasto
-                    </button>
+                    }}>💸 Gasto</button>
                     <button onClick={() => setTipoCorrigido("income")} style={{
                       flex: 1, height: "46px",
                       background: tipoCorrigido === "income" ? "#76BF62" : "#F5F0E4",
@@ -378,9 +374,7 @@ const EnvioComprovante = () => {
                       borderRadius: "10px", fontSize: "14px", fontWeight: 700,
                       color: tipoCorrigido === "income" ? "#fff" : "#1a1a1a",
                       cursor: "pointer", fontFamily: "inherit",
-                    }}>
-                      💰 Receita
-                    </button>
+                    }}>💰 Receita</button>
                   </div>
                 </div>
               </div>
@@ -396,7 +390,6 @@ const EnvioComprovante = () => {
             </div>
           )}
 
-          {/* ERROR */}
           {status === "error" && (
             <div style={{ padding: "48px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
               <AlertCircle size={48} color="#8B2246" />
