@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import user, incomes, transactions, dashboard
+from app.api.v1 import user, incomes, transactions, dashboard, goals
 
 # 1. Configuração da API (Aparece no Swagger/Docs)
 app = FastAPI(
@@ -31,6 +31,7 @@ app.include_router(user.router, prefix="/api/v1", tags=["Autenticação & Usuár
 app.include_router(incomes.router, prefix="/api/v1", tags=["Rendas"])
 app.include_router(transactions.router, prefix="/api/v1", tags=["Transações"])
 app.include_router(dashboard.router, prefix="/api/v1", tags=["Dashboard"])
+app.include_router(goals.router, prefix="/api/v1", tags=["Metas"])
 
 # 4. Endpoint Raiz (Para testar se a API está viva)
 @app.get("/", tags=["Root"])
