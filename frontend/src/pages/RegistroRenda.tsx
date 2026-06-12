@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -18,6 +18,9 @@ import {
   Lightbulb,
   Clock,
   ArrowRight,
+  Upload,
+  ImageIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -68,12 +71,29 @@ interface Income {
   is_recurrent: boolean;
 }
 
+interface UploadResult {
+  message: string;
+  filename: string;
+  extracted: {
+    value: number;
+    description: string;
+    date: string | null;
+    category: string;
+    type: string;
+    confidence: number;
+  };
+  income_id: string;
+}
+
+type Mode = "manual" | "foto";
+
 // ── componente principal ─────────────────────────────────────────────────────
 const RegistroRenda = () => {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mode, setMode] = useState<Mode>("manual");
 
-  // estados do formulário
+  // estados do formulário manual
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -83,6 +103,13 @@ const RegistroRenda = () => {
   const [apiError, setApiError] = useState("");
   const [recentIncomes, setRecentIncomes] = useState<Income[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // estados do upload via foto (SM-34)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const sidebarW = collapsed ? 64 : 188;
 
@@ -194,6 +221,63 @@ const RegistroRenda = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ── upload via foto (SM-34) ──────────────────────────────────────────────
+  const handlePhotoUpload = async () => {
+    if (!selectedFile) return;
+    setUploadError("");
+    setUploadResult(null);
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/incomes/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const erro = await response.json();
+        setUploadError(erro.detail || "Erro ao processar imagem.");
+        return;
+      }
+
+      const data: UploadResult = await response.json();
+      setUploadResult(data);
+      toast.success("Renda registrada via foto com sucesso! 🎉");
+
+      const newIncome: Income = {
+        id: Date.now(),
+        value: data.extracted.value,
+        description: data.extracted.description,
+        date: data.extracted.date ?? new Date().toISOString().split("T")[0],
+        is_recurrent: false,
+      };
+      setRecentIncomes(prev => [newIncome, ...prev.slice(0, 2)]);
+
+      setTimeout(() => navigate("/dashboard"), 2000);
+    } catch {
+      setUploadError("Erro de conexão. Verifique se o servidor está rodando.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    setUploadResult(null);
+    setUploadError("");
+  };
+
+  const clearFile = () => {
+    setSelectedFile(null);
+    setUploadResult(null);
+    setUploadError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // ── helpers de foco ──────────────────────────────────────────────────────
@@ -373,184 +457,341 @@ const RegistroRenda = () => {
                   Nova Renda
                 </p>
                 <p style={{ fontSize: 12, color: "#9a8f7e", margin: "2px 0 0" }}>
-                  Preencha os dados abaixo
+                  {mode === "manual" ? "Preencha os dados abaixo" : "Envie uma foto do comprovante"}
                 </p>
               </div>
             </div>
 
-            {/* ── Campos obrigatórios ── */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {/* ── Seletor de modo ── */}
+            <div style={{
+              display: "flex", gap: 8, marginBottom: 24,
+              background: "#F5F0E4", borderRadius: 12, padding: 4,
+            }}>
+              {(["manual", "foto"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setApiError(""); setUploadError(""); setUploadResult(null); setSelectedFile(null); }}
+                  style={{
+                    flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                    padding: "9px 0", borderRadius: 9, border: "none", cursor: "pointer",
+                    fontFamily: "inherit", fontSize: 13, fontWeight: 600,
+                    background: mode === m ? "#fff" : "transparent",
+                    color: mode === m ? "#1a1a1a" : "#9a8f7e",
+                    boxShadow: mode === m ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {m === "manual" ? <FileText size={14} /> : <ImageIcon size={14} />}
+                  {m === "manual" ? "Manual" : "Via Foto"}
+                </button>
+              ))}
+            </div>
 
-              {/* Valor */}
-              <div>
-                <label style={labelStyle}>
-                  Valor <span style={{ color: "#8B2246" }}>*</span>
-                </label>
-                <div style={{ position: "relative" }}>
-                  <DollarSign
-                    size={15} color="#9a8f7e"
-                    style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                  />
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={value}
-                    onChange={(e) => { setValue(e.target.value); setErrors((err) => ({ ...err, value: undefined })); }}
-                    style={{ ...inputBase, borderColor: errors.value ? "#8B2246" : "#D9D0BE" }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                </div>
-                {errors.value && <p style={errorStyle}>{errors.value}</p>}
-              </div>
+            {/* ── Conteúdo do formulário por modo ── */}
+            {mode === "manual" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
-              {/* Descrição */}
-              <div>
-                <label style={labelStyle}>
-                  Descrição <span style={{ color: "#8B2246" }}>*</span>
-                </label>
-                <div style={{ position: "relative" }}>
-                  <FileText
-                    size={15} color="#9a8f7e"
-                    style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Ex: Salário, Freelance, Investimentos…"
-                    value={description}
-                    maxLength={255}
-                    onChange={(e) => { setDescription(e.target.value); setErrors((err) => ({ ...err, description: undefined })); }}
-                    style={{ ...inputBase, borderColor: errors.description ? "#8B2246" : "#D9D0BE" }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                </div>
-                {errors.description && <p style={errorStyle}>{errors.description}</p>}
-              </div>
-
-              {/* Data */}
-              <div>
-                <label style={labelStyle}>
-                  Data <span style={{ color: "#8B2246" }}>*</span>
-                </label>
-                <div style={{ position: "relative" }}>
-                  <Calendar
-                    size={15} color="#9a8f7e"
-                    style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                  />
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => { setDate(e.target.value); setErrors((err) => ({ ...err, date: undefined })); }}
-                    style={{ ...inputBase, borderColor: errors.date ? "#8B2246" : "#D9D0BE", colorScheme: "light" }}
-                    onFocus={onFocus}
-                    onBlur={onBlur}
-                  />
-                </div>
-                {errors.date && <p style={errorStyle}>{errors.date}</p>}
-              </div>
-
-              {/* Divisor */}
-              <div style={{ height: 1, background: "#F0EAD8", margin: "4px 0" }} />
-
-              {/* Toggle recorrência */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background: "#F5F0E4",
-                  borderRadius: 12,
-                  padding: "14px 18px",
-                }}
-              >
+                {/* Valor */}
                 <div>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
-                    Renda recorrente mensal
-                  </p>
-                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9a8f7e" }}>
-                    Marque se essa renda se repete todo mês
-                  </p>
+                  <label style={labelStyle}>
+                    Valor <span style={{ color: "#8B2246" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <DollarSign
+                      size={15} color="#9a8f7e"
+                      style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                    />
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={value}
+                      onChange={(e) => { setValue(e.target.value); setErrors((err) => ({ ...err, value: undefined })); }}
+                      style={{ ...inputBase, borderColor: errors.value ? "#8B2246" : "#D9D0BE" }}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                  </div>
+                  {errors.value && <p style={errorStyle}>{errors.value}</p>}
                 </div>
-                <Switch
-                  checked={isRecurrent}
-                  onCheckedChange={setIsRecurrent}
-                  style={
-                    {
-                      "--primary": isRecurrent ? "#C89B30" : undefined,
-                    } as React.CSSProperties
-                  }
-                />
-              </div>
 
-              {/* Erro da API */}
-              {apiError && (
+                {/* Descrição */}
+                <div>
+                  <label style={labelStyle}>
+                    Descrição <span style={{ color: "#8B2246" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <FileText
+                      size={15} color="#9a8f7e"
+                      style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Ex: Salário, Freelance, Investimentos…"
+                      value={description}
+                      maxLength={255}
+                      onChange={(e) => { setDescription(e.target.value); setErrors((err) => ({ ...err, description: undefined })); }}
+                      style={{ ...inputBase, borderColor: errors.description ? "#8B2246" : "#D9D0BE" }}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                  </div>
+                  {errors.description && <p style={errorStyle}>{errors.description}</p>}
+                </div>
+
+                {/* Data */}
+                <div>
+                  <label style={labelStyle}>
+                    Data <span style={{ color: "#8B2246" }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <Calendar
+                      size={15} color="#9a8f7e"
+                      style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                    />
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => { setDate(e.target.value); setErrors((err) => ({ ...err, date: undefined })); }}
+                      style={{ ...inputBase, borderColor: errors.date ? "#8B2246" : "#D9D0BE", colorScheme: "light" }}
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                    />
+                  </div>
+                  {errors.date && <p style={errorStyle}>{errors.date}</p>}
+                </div>
+
+                {/* Divisor */}
+                <div style={{ height: 1, background: "#F0EAD8", margin: "4px 0" }} />
+
+                {/* Toggle recorrência */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
-                    background: "#FDE8EE",
-                    border: "1px solid #f5b8ca",
-                    borderRadius: 10,
-                    padding: "12px 16px",
+                    justifyContent: "space-between",
+                    background: "#F5F0E4",
+                    borderRadius: 12,
+                    padding: "14px 18px",
                   }}
                 >
-                  <AlertCircle size={16} color="#8B2246" style={{ flexShrink: 0 }} />
-                  <p style={{ margin: 0, fontSize: 13, color: "#8B2246" }}>{apiError}</p>
+                  <div>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
+                      Renda recorrente mensal
+                    </p>
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "#9a8f7e" }}>
+                      Marque se essa renda se repete todo mês
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isRecurrent}
+                    onCheckedChange={setIsRecurrent}
+                    style={{ "--primary": isRecurrent ? "#C89B30" : undefined } as React.CSSProperties}
+                  />
                 </div>
-              )}
 
-              {/* Ações */}
-              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 4 }}>
-                <button
-                  onClick={() => navigate("/dashboard")}
-                  disabled={loading}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    background: "#F5F0E4", border: "1.5px solid #D9D0BE",
-                    borderRadius: 100, padding: "11px 22px",
-                    fontSize: 13, fontWeight: 700, color: "#1a1a1a",
-                    cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
-                    opacity: loading ? 0.6 : 1,
-                  }}
-                >
-                  Cancelar
-                </button>
+                {/* Erro da API */}
+                {apiError && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#FDE8EE", border: "1px solid #f5b8ca", borderRadius: 10, padding: "12px 16px" }}>
+                    <AlertCircle size={16} color="#8B2246" style={{ flexShrink: 0 }} />
+                    <p style={{ margin: 0, fontSize: 13, color: "#8B2246" }}>{apiError}</p>
+                  </div>
+                )}
 
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
+                {/* Ações */}
+                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 4 }}>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    disabled={loading}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: "#F5F0E4", border: "1.5px solid #D9D0BE",
+                      borderRadius: 100, padding: "11px 22px",
+                      fontSize: 13, fontWeight: 700, color: "#1a1a1a",
+                      cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
+                      opacity: loading ? 0.6 : 1,
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: loading ? "#D9D0BE" : "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
+                      border: "none", borderRadius: 100, padding: "11px 28px",
+                      fontSize: 13, fontWeight: 700, color: "#1a1a1a",
+                      cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
+                      transition: "background 0.2s, transform 0.1s",
+                    }}
+                    onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "scale(1.02)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                  >
+                    {loading ? (
+                      <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> Registrando…</>
+                    ) : (
+                      <><CheckCircle size={14} /> Registrar Renda</>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+            ) : (
+              /* ── Modo foto (SM-34) ── */
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+
+                {/* Área de upload */}
+                <div
+                  onClick={() => !selectedFile && fileInputRef.current?.click()}
                   style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    background: loading
-                      ? "#D9D0BE"
-                      : "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
-                    border: "none", borderRadius: 100, padding: "11px 28px",
-                    fontSize: 13, fontWeight: 700, color: "#1a1a1a",
-                    cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit",
-                    transition: "background 0.2s, transform 0.1s",
+                    border: `2px dashed ${selectedFile ? "#C89B30" : "#D9D0BE"}`,
+                    borderRadius: 14,
+                    padding: "32px 24px",
+                    textAlign: "center",
+                    cursor: selectedFile ? "default" : "pointer",
+                    background: selectedFile ? "#FDFAF5" : "#FAFAF8",
+                    transition: "border-color 0.2s, background 0.2s",
                   }}
-                  onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "scale(1.02)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                  onMouseEnter={(e) => { if (!selectedFile) e.currentTarget.style.borderColor = "#C89B30"; }}
+                  onMouseLeave={(e) => { if (!selectedFile) e.currentTarget.style.borderColor = "#D9D0BE"; }}
                 >
-                  {loading ? (
-                    <>
-                      <RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} />
-                      Registrando…
-                    </>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
+                  {selectedFile ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 10,
+                          background: "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <ImageIcon size={18} color="#1a1a1a" />
+                        </div>
+                        <div style={{ textAlign: "left" }}>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{selectedFile.name}</p>
+                          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#9a8f7e" }}>
+                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); clearFile(); }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 4, borderRadius: 6 }}
+                      >
+                        <X size={16} color="#9a8f7e" />
+                      </button>
+                    </div>
                   ) : (
                     <>
-                      <CheckCircle size={14} />
-                      Registrar Renda
+                      <Upload size={32} color="#9a8f7e" style={{ margin: "0 auto 12px" }} />
+                      <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 600, color: "#1a1a1a" }}>
+                        Clique para selecionar o comprovante
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: "#9a8f7e" }}>
+                        JPEG, PNG ou PDF — máx. 10 MB
+                      </p>
                     </>
                   )}
-                </button>
-              </div>
+                </div>
 
-            </div>
+                {/* Resultado da extração */}
+                {uploadResult && (
+                  <div style={{
+                    background: "#F0FBF0", border: "1px solid #A5D6A7",
+                    borderRadius: 12, padding: "16px 18px",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <CheckCircle size={16} color="#2E7D32" />
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#2E7D32" }}>
+                        Dados extraídos com sucesso
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 12, color: "#555" }}>Valor</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a" }}>
+                          {formatCurrency(uploadResult.extracted.value)}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 12, color: "#555" }}>Descrição</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a" }}>
+                          {uploadResult.extracted.description}
+                        </span>
+                      </div>
+                      {uploadResult.extracted.date && (
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 12, color: "#555" }}>Data</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#1a1a1a" }}>
+                            {formatDate(uploadResult.extracted.date)}
+                          </span>
+                        </div>
+                      )}
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 12, color: "#555" }}>Confiança</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#C89B30" }}>
+                          {Math.round(uploadResult.extracted.confidence * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Erro de upload */}
+                {uploadError && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#FDE8EE", border: "1px solid #f5b8ca", borderRadius: 10, padding: "12px 16px" }}>
+                    <AlertCircle size={16} color="#8B2246" style={{ flexShrink: 0 }} />
+                    <p style={{ margin: 0, fontSize: 13, color: "#8B2246" }}>{uploadError}</p>
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 4 }}>
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    disabled={uploading}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: "#F5F0E4", border: "1.5px solid #D9D0BE",
+                      borderRadius: 100, padding: "11px 22px",
+                      fontSize: 13, fontWeight: 700, color: "#1a1a1a",
+                      cursor: uploading ? "not-allowed" : "pointer", fontFamily: "inherit",
+                      opacity: uploading ? 0.6 : 1,
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handlePhotoUpload}
+                    disabled={!selectedFile || uploading}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      background: !selectedFile || uploading ? "#D9D0BE" : "linear-gradient(135deg, #C89B30 0%, #E8BE45 100%)",
+                      border: "none", borderRadius: 100, padding: "11px 28px",
+                      fontSize: 13, fontWeight: 700, color: "#1a1a1a",
+                      cursor: !selectedFile || uploading ? "not-allowed" : "pointer", fontFamily: "inherit",
+                      transition: "background 0.2s, transform 0.1s",
+                    }}
+                    onMouseEnter={(e) => { if (selectedFile && !uploading) e.currentTarget.style.transform = "scale(1.02)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                  >
+                    {uploading ? (
+                      <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> Processando…</>
+                    ) : (
+                      <><Upload size={14} /> Enviar Comprovante</>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+            )}
           </div>
 
           {/* ── Sidebar com informações ── */}

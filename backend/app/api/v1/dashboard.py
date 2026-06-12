@@ -1,70 +1,83 @@
+from datetime import date
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends
+from sqlalchemy import extract
 from sqlalchemy.orm import Session
-from app.core.dependencies import get_db
-from app.models.transaction import Transaction
+
+from app.core.dependencies import get_current_user, get_db
 from app.models.incomes import Income
+from app.models.transaction import Transaction
+from app.schemas.dashboard_schema import CategorySummary, DashboardResponse
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
-USER_ID = "6a96d725-8495-4175-8a82-793b679fd77c"
 
-
-@router.get("/resumo")
-def get_resumo(db: Session = Depends(get_db)):
+@router.get("/", response_model=DashboardResponse, summary="Resumo financeiro do mês corrente")
+def get_dashboard(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user),
+):
     """
-    Retorna o resumo financeiro da usuária.
-    SM-37 — cálculo de saldo e agrupamento por categoria.
+    RF4 – Visualizar Dashboard Financeiro (US4).
+
+    Retorna para o mês corrente:
+    - **total_receitas**: soma de todas as rendas (RN1)
+    - **total_despesas**: soma de todos os gastos via comprovante (RN1)
+    - **saldo**: total_receitas − total_despesas (RN1)
+    - **categorias**: gastos agrupados por categoria (RN2)
+
+    Requer autenticação via Bearer token.
     """
+    hoje = date.today()
+    mes_atual = hoje.month
+    ano_atual = hoje.year
 
-    transacoes = db.query(Transaction).filter(
-        Transaction.user_id == USER_ID
-    ).all()
+    # RN1 — receitas do mês corrente filtradas pela usuária autenticada
+    rendas = (
+        db.query(Income)
+        .filter(
+            Income.user_id == user_id,
+            extract("month", Income.date) == mes_atual,
+            extract("year", Income.date) == ano_atual,
+        )
+        .all()
+    )
+    total_receitas = sum(Decimal(str(r.value)) for r in rendas)
 
-    rendas = db.query(Income).filter(
-        Income.user_id == USER_ID
-    ).all()
-
-    total_gastos = sum(
-        float(t.value) for t in transacoes
-        if t.type == "expense"
+    # RN1 — despesas do mês corrente filtradas por type == "expense"
+    transacoes = (
+        db.query(Transaction)
+        .filter(
+            Transaction.user_id == user_id,
+            Transaction.type == "expense",
+            extract("month", Transaction.created_at) == mes_atual,
+            extract("year", Transaction.created_at) == ano_atual,
+        )
+        .all()
+    )
+    total_despesas = sum(
+        Decimal(str(t.value)) for t in transacoes if t.value is not None
     )
 
-    total_renda = sum(float(r.value) for r in rendas)
+    saldo = total_receitas - total_despesas
 
-    saldo = total_renda - total_gastos
-
-    categorias: dict = {}
+    # RN2 — gastos agrupados por categoria
+    categorias_map: dict[str, Decimal] = {}
     for t in transacoes:
-        if t.type == "expense":
-            cat = t.category or "Outros"
-            categorias[cat] = categorias.get(cat, 0) + float(t.value)
+        if t.value is None:
+            continue
+        cat = t.category or "Outros"
+        categorias_map[cat] = categorias_map.get(cat, Decimal("0")) + Decimal(str(t.value))
 
-    movimentacoes = []
+    categorias = [
+        CategorySummary(category=cat, total=total)
+        for cat, total in sorted(categorias_map.items())
+    ]
 
-    for t in transacoes[-10:]:
-        movimentacoes.append({
-            "date": str(t.created_at)[:10] if t.created_at else "",
-            "description": t.description or "Comprovante",
-            "category": t.category or "Outros",
-            "amount": -float(t.value),
-            "type": "Gasto"
-        })
-
-    for r in rendas[-5:]:
-        movimentacoes.append({
-            "date": str(r.date),
-            "description": r.description or "Renda",
-            "category": "Renda",
-            "amount": float(r.value),
-            "type": "Economia"
-        })
-
-    movimentacoes.sort(key=lambda x: x["date"], reverse=True)
-
-    return {
-        "total_gastos": round(total_gastos, 2),
-        "total_renda": round(total_renda, 2),
-        "saldo": round(saldo, 2),
-        "categorias": categorias,
-        "movimentacoes": movimentacoes[:10]
-    }
+    return DashboardResponse(
+        total_receitas=total_receitas,
+        total_despesas=total_despesas,
+        saldo=saldo,
+        categorias=categorias,
+    )

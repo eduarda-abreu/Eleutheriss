@@ -4,19 +4,19 @@
 from pydantic import BaseModel
 from decimal import Decimal
 from datetime import date
+from uuid import UUID
 
 class IncomeCreate(BaseModel):
-    value: Decimal # valor da renda (ex: 1500.00)
-    description: str # descrição (ex: 'Salário')
-    is_recurrent: bool = False # renda fixa ou variável
-    date: date # data da renda
+    value: Decimal
+    description: str
+    is_recurrent: bool = False
+    date: date
 
 class IncomeResponse(BaseModel):
-    id: str
-    user_id: str
+    id: UUID
+    user_id: UUID
     value: Decimal
     description: str
     is_recurrent: bool
     date: date
-    # Permite criar o schema a partir de objetos SQLAlchemy
     model_config = {"from_attributes": True}
