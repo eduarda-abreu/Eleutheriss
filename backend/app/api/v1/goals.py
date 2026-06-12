@@ -7,7 +7,7 @@ from app.services.goal_service import goal_service
 
 router = APIRouter(prefix="/goals")
 
-USER_ID = "4dea455b-8886-4d03-98b2-3268f9de9829"
+USER_ID = "6a96d725-8495-4175-8a82-793b679fd77c"
 
 
 @router.post("/", response_model=GoalResponse, status_code=status.HTTP_201_CREATED)
