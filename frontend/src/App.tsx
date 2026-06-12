@@ -11,28 +11,32 @@ import Dashbboard from "./pages/Dashboard.tsx";
 import EnvioComprovante from "./pages/EnvioComprovante.tsx";
 import RegistroRenda from "./pages/RegistroRenda.tsx";
 import AlterarSenha from "./pages/AlterarSenha.tsx";
+import Metas from "./pages/Metas.tsx";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/dashboard" element={<Dashbboard />} />
-          <Route path="/envio-comprovante" element={<EnvioComprovante />} />
-          <Route path="/registro-renda" element={<RegistroRenda />} />
-          <Route path="/alterar-senha" element={<AlterarSenha />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/dashboard" element={<Dashbboard />} />
+            <Route path="/envio-comprovante" element={<EnvioComprovante />} />
+            <Route path="/registro-renda" element={<RegistroRenda />} />
+            <Route path="/alterar-senha" element={<AlterarSenha />} />
+            <Route path="/metas" element={<Metas />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
