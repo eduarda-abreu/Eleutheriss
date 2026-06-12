@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, LogOut, ChevronLeft, AlertCircle,
-  GraduationCap, TrendingUp, Wallet, Settings,
+  GraduationCap, TrendingUp, Wallet, Settings, Target,
 } from "lucide-react";
 // Certifique-se de que o caminho do logo está correto no seu projeto
 import logoIcon from "@/assets/logo-branco.png";
@@ -20,6 +20,17 @@ interface SummaryData {
   totalGastos: number;
   totalEconomizado: number;
   saldoMes: number;
+}
+
+interface GoalProgress {
+  id: string;
+  title: string;
+  target_value: number;
+  saved_value: number;
+  percent: number;
+  remaining: number;
+  on_track: boolean;
+  status: string;
 }
 
 interface StatCardProps {
@@ -47,6 +58,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
+  const [goalProgress, setGoalProgress] = useState<GoalProgress[]>([]);
 
   // Estado agrupado para os resumos vindos da API
   const [summary, setSummary] = useState<SummaryData>({
@@ -74,7 +86,7 @@ const Dashboard = () => {
           totalEconomizado: data.total_renda || 0,
           saldoMes: data.saldo || 0
         });
-        
+
         setTransactions(data.movimentacoes || []);
 
       } catch (error) {
@@ -88,6 +100,20 @@ const Dashboard = () => {
     fetchDashboard();
   }, []);
 
+  // SM-54 — Carrega o progresso das metas para o card resumo
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        const baseUrl = import.meta.env.VITE_API_URL;
+        const res = await fetch(`${baseUrl}/goals/progress`);
+        if (res.ok) setGoalProgress(await res.json());
+      } catch (error) {
+        console.error("Erro ao buscar metas:", error);
+      }
+    };
+    fetchGoals();
+  }, []);
+
   const sidebarW = collapsed ? 64 : 188;
 
   const navItems = [
@@ -95,6 +121,7 @@ const Dashboard = () => {
     { icon: GraduationCap,  label: "Cursos",        active: false, soon: true,  action: () => {} },
     { icon: TrendingUp,     label: "Investimentos", active: false, soon: true,  action: () => {} },
     { icon: Wallet,         label: "Renda",         active: false, soon: false, action: () => navigate("/registro-renda") },
+    { icon: Target,         label: "Metas",         active: false, soon: false, action: () => navigate("/metas") },
     { icon: Settings,       label: "Configurações", active: false, soon: true,  action: () => {} },
   ];
 
@@ -113,7 +140,7 @@ const Dashboard = () => {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F5F0E4", fontFamily: "'Inter', sans-serif" }}>
-      
+
       {/* ── SIDEBAR ── */}
       <aside
         style={{
@@ -246,11 +273,42 @@ const Dashboard = () => {
           <StatCard label={`Meta de ${getCurrentMonth()}`} value="65%" color="#1a1a1a" up={null} />
         </div>
 
+        {/* CARD RESUMO DE METAS (SM-54) */}
+        {goalProgress.length > 0 && (
+          <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.05)", padding: "20px 24px", marginBottom: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <span style={{ fontWeight: 700 }}>🎯 Minhas Metas</span>
+              <button
+                onClick={() => navigate("/metas")}
+                style={{ background: "none", border: "none", fontSize: 12, color: "#C89B30", cursor: "pointer", fontWeight: 600 }}
+              >
+                Ver todas →
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {goalProgress.slice(0, 3).map((g) => {
+                const barColor = g.percent >= 100 ? "#76BF62" : g.on_track ? "#C89B30" : "#8B2246";
+                return (
+                  <div key={g.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+                      <span style={{ fontWeight: 600, color: "#1a1a1a" }}>{g.title}</span>
+                      <span style={{ color: "#9a8f7e" }}>{g.percent}%</span>
+                    </div>
+                    <div style={{ background: "#F0EAD8", borderRadius: 100, height: 8, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.min(g.percent, 100)}%`, height: "100%", background: barColor, borderRadius: 100, transition: "width 0.4s ease" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* TABELA DE MOVIMENTAÇÕES */}
         <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
           <div style={{ padding: "20px", display: "flex", justifyContent: "space-between" }}>
             <span style={{ fontWeight: 700 }}>Movimentações Recentes</span>
-            <button 
+            <button
               onClick={() => navigate("/envio-comprovante")}
               style={{ background: "#C89B30", border: "none", padding: "8px 16px", borderRadius: 100, fontWeight: 700, cursor: "pointer" }}
             >
